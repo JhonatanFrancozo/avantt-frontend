@@ -1,0 +1,97 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap');
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Inter', sans-serif;
+  --font-mono: 'DM Mono', monospace;
+
+  --color-bg: #EEF1F6;
+  --color-surface: #FFFFFF;
+  --color-sidebar: #1C2333;
+  --color-sidebar-hover: #252F45;
+  --color-sidebar-active: #2D3A54;
+
+  --color-text-primary: #1A2035;
+  --color-text-secondary: #5E6A82;
+  --color-text-muted: #9AA3B2;
+  --color-text-on-dark: #CDD5E0;
+  --color-text-on-dark-muted: #7D8BA3;
+
+  --color-border: #E2E7EF;
+
+  --color-blue: #4B7BF5;
+  --color-blue-light: #EBF0FE;
+  --color-blue-mid: #93ADFA;
+
+  --color-amber: #E07B2A;
+  --color-amber-light: #FEF3E8;
+
+  --color-red: #D95050;
+  --color-red-light: #FDEAEA;
+
+  --color-green: #37A066;
+  --color-green-light: #E8F7F0;
+
+  --color-purple: #7C5CDE;
+  --color-purple-light: #F0ECFD;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-bg);
+  color: var(--color-text-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
+}
+
+/* Dark theme overrides applied via data-theme="dark" on <html> */
+[data-theme="dark"] {
+  --color-bg: #0F1623;
+  --color-surface: #1C2333;
+  --color-sidebar: #111827;
+  --color-sidebar-hover: #1C2535;
+  --color-sidebar-active: #243049;
+
+  --color-text-primary: #D8E0ED;
+  --color-text-secondary: #8A97B0;
+  --color-text-muted: #5E6E8A;
+  --color-text-on-dark: #CDD5E0;
+  --color-text-on-dark-muted: #7D8BA3;
+
+  --color-border: #252F45;
+
+  --color-blue: #5B8AF8;
+  --color-blue-light: #1A2540;
+  --color-blue-mid: #3A5BA0;
+
+  --color-amber: #F09040;
+  --color-amber-light: #2A1D0E;
+
+  --color-red: #E86060;
+  --color-red-light: #2D1515;
+
+  --color-green: #45BE7D;
+  --color-green-light: #0F2B1E;
+
+  --color-purple: #9B7EEE;
+  --color-purple-light: #1E1535;
+}
