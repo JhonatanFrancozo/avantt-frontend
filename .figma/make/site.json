@@ -1,0 +1,10 @@
+{
+  "description": "Centralize IT project task management with a dashboard highlighting overdue tasks, delayed sprints, and responsibilities for efficient team oversight.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
