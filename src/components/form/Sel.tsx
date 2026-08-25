@@ -14,3 +14,6 @@ export default function Sel({ value, onChange, options }: Props) {
     </select>
   )
 }
+
+
+

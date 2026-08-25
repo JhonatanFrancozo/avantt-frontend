@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import Modal from '../components/Modal'
 import ProjectPickerRow from '../components/ProjectPickerRow'
-import { c } from '../theme'
-import type { Member, Project } from '../types'
+import { c } from '../core/theme'
+import type { Member, Project } from '../core/types'
 
 interface Props {
   member: Member
@@ -31,3 +31,6 @@ export default function EditMemberProjectsModal({ member, projects, onClose, onS
     </Modal>
   )
 }
+
+
+

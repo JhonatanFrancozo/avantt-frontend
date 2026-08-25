@@ -65,3 +65,5 @@ export const INIT_TASKS: Task[] = [
   { id: 'T-2222', title: 'Migração dados financeiros legado', project: 'ERP Interno', sprint: 'Sprint 6', assignee: 'Ana Lima', avatar: 'AL', avatarColor: '#4B7BF5', priority: 'crítica', status: 'concluída', daysDelayed: 0, plannedEnd: '2026-08-01', estimatedHours: 40, blockedBy: null, tags: ['dados','migração'] },
   { id: 'T-2223', title: 'Aprovação de férias via workflow', project: 'ERP Interno', sprint: 'Sprint 6', assignee: 'Juliana Park', avatar: 'JP', avatarColor: '#D95050', priority: 'baixa', status: 'cancelada', daysDelayed: 0, plannedEnd: '2026-08-04', estimatedHours: 8, blockedBy: null, tags: ['backend'] },
 ]
+
+

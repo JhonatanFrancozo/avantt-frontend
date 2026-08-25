@@ -18,3 +18,6 @@ export default function Inp({ value, onChange, placeholder, type = 'text' }: Pro
     />
   )
 }
+
+
+

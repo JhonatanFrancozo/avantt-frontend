@@ -1,7 +1,7 @@
-import { c } from '../theme'
-import { workloadColor } from '../utils'
+import { c } from '../core/theme'
+import { workloadColor } from '../core/utils'
 import Avatar from './atoms/Avatar'
-import type { Member } from '../types'
+import type { Member } from '../core/types'
 
 interface Props {
   member: Member
@@ -33,3 +33,5 @@ export default function MemberPickerRow({ member: m, selected, onToggle, showWor
     </div>
   )
 }
+
+

@@ -3,10 +3,10 @@ import Modal from '../components/Modal'
 import { Field, Inp, Textarea, ColorPicker } from '../components/form'
 import { inputStyle } from '../components/form'
 import MemberPickerRow from '../components/MemberPickerRow'
-import { c } from '../theme'
-import { fmtDateShort } from '../utils'
-import { PROJ_PALETTE } from '../constants'
-import type { Project, Member } from '../types'
+import { c } from '../core/theme'
+import { fmtDateShort } from '../core/utils'
+import { PROJ_PALETTE } from '../core/constants'
+import type { Project, Member } from '../core/types'
 
 interface Props {
   members: Member[]
@@ -124,3 +124,6 @@ export default function CreateProjectModal({ members, onClose, onSave }: Props) 
     </Modal>
   )
 }
+
+
+

@@ -5,7 +5,7 @@
  */
 import { api, IS_MOCK } from './client'
 import * as mock from './mock/db'
-import type { Project } from '../types'
+import type { Project } from '../core/types'
 
 export async function listarProjetos(): Promise<Project[]> {
   if (IS_MOCK) return mock.listarProjetos()
@@ -18,3 +18,6 @@ export async function criarProjeto(body: Omit<Project, 'id'>): Promise<Project> 
   const { data } = await api.post<Project>('/projetos', body)
   return data
 }
+
+
+

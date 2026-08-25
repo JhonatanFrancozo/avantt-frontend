@@ -9,8 +9,8 @@
  *   sprint   → Sprint
  *   tarefa   → Task
  */
-import type { Member, Project, Sprint, Task } from '../../types'
-import { INIT_MEMBERS, INIT_PROJECTS, INIT_SPRINTS, INIT_TASKS } from '../../constants'
+import type { Member, Project, Sprint, Task } from '../../core/types'
+import { INIT_MEMBERS, INIT_PROJECTS, INIT_SPRINTS, INIT_TASKS } from '../../core/constants'
 
 const delay = (ms = 120) => new Promise<void>((r) => setTimeout(r, ms))
 
@@ -110,3 +110,5 @@ export async function criarTarefa(data: Omit<Task, 'id'>): Promise<Task> {
   _tasks = [..._tasks, nova]
   return structuredClone(nova)
 }
+
+

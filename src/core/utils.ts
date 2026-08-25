@@ -42,3 +42,5 @@ export function delayHex(days: number): string {
 export function workloadColor(value: number): string {
   return value >= 85 ? c.red : value >= 70 ? c.amber : c.green
 }
+
+

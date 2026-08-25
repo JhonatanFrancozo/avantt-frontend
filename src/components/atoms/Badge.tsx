@@ -1,5 +1,5 @@
-import { STATUS_META } from '../../theme'
-import type { TaskStatus } from '../../types'
+import { STATUS_META } from '../../core/theme'
+import type { TaskStatus } from '../../core/types'
 
 export default function Badge({ status }: { status: TaskStatus }) {
   const s = STATUS_META[status]
@@ -9,3 +9,6 @@ export default function Badge({ status }: { status: TaskStatus }) {
     </span>
   )
 }
+
+
+

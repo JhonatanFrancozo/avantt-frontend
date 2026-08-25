@@ -1,5 +1,5 @@
 import { useEffect, useRef, type ReactNode } from 'react'
-import { c } from '../theme'
+import { c } from '../core/theme'
 
 interface Props {
   title: string
@@ -35,3 +35,5 @@ export default function Modal({ title, onClose, onSubmit, submitLabel = 'Criar',
     </div>
   )
 }
+
+

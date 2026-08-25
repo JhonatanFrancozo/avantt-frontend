@@ -10,7 +10,7 @@
  */
 import { api, IS_MOCK } from './client'
 import * as mock from './mock/db'
-import type { Task } from '../types'
+import type { Task } from '../core/types'
 
 interface FiltrosTarefa {
   projetoId?: string
@@ -29,3 +29,6 @@ export async function criarTarefa(body: Omit<Task, 'id'>): Promise<Task> {
   const { data } = await api.post<Task>('/tarefas', body)
   return data
 }
+
+
+

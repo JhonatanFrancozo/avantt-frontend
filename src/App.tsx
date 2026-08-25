@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react'
-import { useTheme, c } from './theme'
-import { TODAY_STR } from './utils'
+import { useTheme, c } from './core/theme'
+import { TODAY_STR } from './core/utils'
 import * as api from './api'
-import { txt } from './content'
+import { txt } from './core/content'
 import { Sidebar, PageHeader } from './components/layout'
 import { BtnPrimary } from './components/atoms'
 import { CreateProjectModal, CreateTaskModal, CreateSprintModal, CreateMemberModal } from './modals'
 import { OverviewPage, ProjectsPage, SprintsPage, BacklogPage, TeamPage, ReportsPage } from './pages'
-import type { Page, ActiveModal, Task, Project, Sprint, Member } from './types'
+import type { Page, ActiveModal, Task, Project, Sprint, Member } from './core/types'
 
 export default function App() {
   const { dark, toggle } = useTheme()
@@ -117,3 +117,6 @@ export default function App() {
     </div>
   )
 }
+
+
+

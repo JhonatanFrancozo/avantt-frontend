@@ -1,7 +1,7 @@
-import { c } from '../../theme'
-import { NAV_ITEMS } from '../../constants'
+import { c } from '../../core/theme'
+import { NAV_ITEMS } from '../../core/constants'
 import Avatar from '../atoms/Avatar'
-import type { Page, Project } from '../../types'
+import type { Page, Project } from '../../core/types'
 
 interface Props {
   active: Page
@@ -53,3 +53,6 @@ export default function Sidebar({ active, onNav, projects }: Props) {
     </aside>
   )
 }
+
+
+

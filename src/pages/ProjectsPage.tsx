@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import { c } from '../theme'
+import { c } from '../core/theme'
 import { Avatar, BtnPrimary } from '../components/atoms'
 import ProgressBar from '../components/atoms/ProgressBar'
-import { fmtDateShort, fmtDate, mkInitials } from '../utils'
-import type { Project, Member } from '../types'
+import { fmtDateShort, fmtDate, mkInitials } from '../core/utils'
+import type { Project, Member } from '../core/types'
 
 interface Props {
   projects: Project[]
@@ -130,3 +130,6 @@ export default function ProjectsPage({ projects, members, onCreateProject }: Pro
     </div>
   )
 }
+
+
+

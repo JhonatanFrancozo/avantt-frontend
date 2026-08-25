@@ -1,10 +1,10 @@
 import { useState, useMemo } from 'react'
-import { c } from '../theme'
+import { c } from '../core/theme'
 import { Avatar, BtnPrimary, StatCard } from '../components/atoms'
 import ProgressBar from '../components/atoms/ProgressBar'
-import { workloadColor } from '../utils'
+import { workloadColor } from '../core/utils'
 import EditMemberProjectsModal from '../modals/EditMemberProjectsModal'
-import type { Member, Project } from '../types'
+import type { Member, Project } from '../core/types'
 
 interface Props {
   members: Member[]
@@ -134,3 +134,6 @@ export default function TeamPage({ members, projects, onAddMember, onUpdateMembe
     </div>
   )
 }
+
+
+

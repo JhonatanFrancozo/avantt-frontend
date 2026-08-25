@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { c } from '../../theme'
+import { c } from '../../core/theme'
 
 interface Props {
   label: string
@@ -20,3 +20,6 @@ export default function Field({ label, required, error, children }: Props) {
     </div>
   )
 }
+
+
+

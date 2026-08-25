@@ -1,4 +1,4 @@
-import { c } from '../../theme'
+import { c } from '../../core/theme'
 
 export default function ThemeToggle({ dark, onToggle }: { dark: boolean; onToggle: () => void }) {
   return (
@@ -12,3 +12,6 @@ export default function ThemeToggle({ dark, onToggle }: { dark: boolean; onToggl
     </button>
   )
 }
+
+
+

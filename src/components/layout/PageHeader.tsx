@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { c } from '../../theme'
+import { c } from '../../core/theme'
 import Avatar from '../atoms/Avatar'
 import ThemeToggle from '../atoms/ThemeToggle'
 
@@ -30,3 +30,6 @@ export default function PageHeader({ title, subtitle, dark, onToggle, children }
     </header>
   )
 }
+
+
+

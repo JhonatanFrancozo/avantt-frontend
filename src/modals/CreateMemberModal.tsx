@@ -3,10 +3,10 @@ import Modal from '../components/Modal'
 import { Field, Inp, Sel, ColorPicker } from '../components/form'
 import { Avatar } from '../components/atoms'
 import ProjectPickerRow from '../components/ProjectPickerRow'
-import { c } from '../theme'
-import { mkInitials } from '../utils'
-import { MEMBER_COLORS, ROLES } from '../constants'
-import type { Member, Project } from '../types'
+import { c } from '../core/theme'
+import { mkInitials } from '../core/utils'
+import { MEMBER_COLORS, ROLES } from '../core/constants'
+import type { Member, Project } from '../core/types'
 
 interface Props {
   projects: Project[]
@@ -88,3 +88,6 @@ export default function CreateMemberModal({ projects, onClose, onSave }: Props) 
     </Modal>
   )
 }
+
+
+

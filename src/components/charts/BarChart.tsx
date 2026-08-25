@@ -1,4 +1,4 @@
-import { c } from '../../theme'
+import { c } from '../../core/theme'
 
 interface Bar { label: string; value: number; color?: string }
 
@@ -24,3 +24,6 @@ export default function BarChart({ data, color = c.blue, max }: Props) {
     </div>
   )
 }
+
+
+

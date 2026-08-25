@@ -4,9 +4,9 @@ import { Field, Inp, Sel, Textarea } from '../components/form'
 import { inputStyle } from '../components/form'
 import { Badge, PriorityDot, TagPill } from '../components/atoms'
 import MemberPickerRow from '../components/MemberPickerRow'
-import { c, STATUS_META, STATUS_OPTIONS } from '../theme'
-import { mkInitials, nextTaskId } from '../utils'
-import type { Task, Project, Member, TaskPriority, TaskStatus } from '../types'
+import { c, STATUS_META, STATUS_OPTIONS } from '../core/theme'
+import { mkInitials, nextTaskId } from '../core/utils'
+import type { Task, Project, Member, TaskPriority, TaskStatus } from '../core/types'
 
 interface Props {
   projects: Project[]
@@ -133,3 +133,6 @@ export default function CreateTaskModal({ projects, tasks, members, onClose, onS
     </Modal>
   )
 }
+
+
+

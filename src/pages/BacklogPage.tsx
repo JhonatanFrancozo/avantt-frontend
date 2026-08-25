@@ -1,10 +1,10 @@
 import { useState, useMemo } from 'react'
-import { c, STATUS_META, STATUS_OPTIONS, PRIORITY_META } from '../theme'
+import { c, STATUS_META, STATUS_OPTIONS, PRIORITY_META } from '../core/theme'
 import { Avatar, Badge, PriorityDot, BtnPrimary, TagPill } from '../components/atoms'
 import ProgressBar from '../components/atoms/ProgressBar'
-import { fmtDateShort, delayColor } from '../utils'
-import { PRIORITY_ORDER } from '../constants'
-import type { Task, Project, Member, TaskStatus, TaskPriority } from '../types'
+import { fmtDateShort, delayColor } from '../core/utils'
+import { PRIORITY_ORDER } from '../core/constants'
+import type { Task, Project, Member, TaskStatus, TaskPriority } from '../core/types'
 
 // ── Kanban ─────────────────────────────────────────────────────────────────────
 
@@ -267,3 +267,6 @@ export default function BacklogPage({ tasks, projects, members: _members, onCrea
     </div>
   )
 }
+
+
+

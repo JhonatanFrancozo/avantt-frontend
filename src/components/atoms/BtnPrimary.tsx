@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { c } from '../../theme'
+import { c } from '../../core/theme'
 
 export default function BtnPrimary({ onClick, children }: { onClick: () => void; children: ReactNode }) {
   return (
@@ -8,3 +8,6 @@ export default function BtnPrimary({ onClick, children }: { onClick: () => void;
     </button>
   )
 }
+
+
+

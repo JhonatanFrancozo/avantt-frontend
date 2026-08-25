@@ -1,5 +1,5 @@
-import { c } from '../../theme'
-import { workloadColor } from '../../utils'
+import { c } from '../../core/theme'
+import { workloadColor } from '../../core/utils'
 
 interface Props {
   value: number
@@ -16,3 +16,6 @@ export default function ProgressBar({ value, color, height = 4 }: Props) {
     </div>
   )
 }
+
+
+

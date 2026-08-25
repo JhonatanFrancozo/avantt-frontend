@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import { c } from '../theme'
+import { c } from '../core/theme'
 import { Avatar, BtnPrimary } from '../components/atoms'
 import ProgressBar from '../components/atoms/ProgressBar'
-import { fmtDateShort } from '../utils'
-import { delayColor, delayHex } from '../utils'
-import type { Sprint, Project, Member } from '../types'
+import { fmtDateShort } from '../core/utils'
+import { delayColor, delayHex } from '../core/utils'
+import type { Sprint, Project, Member } from '../core/types'
 
 interface Props {
   sprints: Sprint[]
@@ -110,3 +110,6 @@ export default function SprintsPage({ sprints, projects, members, onCreateSprint
     </div>
   )
 }
+
+
+

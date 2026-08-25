@@ -39,3 +39,5 @@ export const PRIORITY_META: Record<TaskPriority, { dot: string; label: string }>
   média:   { dot: 'var(--color-blue)', label: 'Média' },
   baixa:   { dot: 'var(--color-green)', label: 'Baixa' },
 }
+
+

@@ -1,10 +1,10 @@
 import { useMemo } from 'react'
-import { c, STATUS_OPTIONS, STATUS_META, PRIORITY_META } from '../theme'
+import { c, STATUS_OPTIONS, STATUS_META, PRIORITY_META } from '../core/theme'
 import { Avatar, StatCard } from '../components/atoms'
 import ProgressBar from '../components/atoms/ProgressBar'
 import { BarChart, DonutChart } from '../components/charts'
-import { workloadColor, delayColor } from '../utils'
-import type { Task, Project, Member, Sprint } from '../types'
+import { workloadColor, delayColor } from '../core/utils'
+import type { Task, Project, Member, Sprint } from '../core/types'
 
 interface Props {
   tasks: Task[]
@@ -156,3 +156,6 @@ export default function ReportsPage({ tasks, projects, members, sprints }: Props
     </div>
   )
 }
+
+
+

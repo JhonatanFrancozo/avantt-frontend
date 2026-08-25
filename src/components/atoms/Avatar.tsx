@@ -5,3 +5,6 @@ export default function Avatar({ i, color, size = 32 }: { i: string; color: stri
     </div>
   )
 }
+
+
+

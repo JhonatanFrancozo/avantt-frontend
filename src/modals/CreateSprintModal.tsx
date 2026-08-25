@@ -2,8 +2,8 @@ import { useState, useMemo } from 'react'
 import Modal from '../components/Modal'
 import { Field, Inp, Sel, Textarea } from '../components/form'
 import MemberPickerRow from '../components/MemberPickerRow'
-import { c } from '../theme'
-import type { Sprint, Project, Member } from '../types'
+import { c } from '../core/theme'
+import type { Sprint, Project, Member } from '../core/types'
 
 interface Props {
   projects: Project[]
@@ -90,3 +90,6 @@ export default function CreateSprintModal({ projects, members, onClose, onSave }
     </Modal>
   )
 }
+
+
+

@@ -1,4 +1,4 @@
-import { c } from '../../theme'
+import { c } from '../../core/theme'
 
 interface Props {
   tag: string
@@ -15,3 +15,6 @@ export default function TagPill({ tag, onRemove }: Props) {
     </span>
   )
 }
+
+
+

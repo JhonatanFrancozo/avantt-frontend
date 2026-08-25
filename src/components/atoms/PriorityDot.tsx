@@ -1,5 +1,5 @@
-import { c, PRIORITY_META } from '../../theme'
-import type { TaskPriority } from '../../types'
+import { c, PRIORITY_META } from '../../core/theme'
+import type { TaskPriority } from '../../core/types'
 
 export default function PriorityDot({ priority }: { priority: TaskPriority }) {
   const p = PRIORITY_META[priority]
@@ -10,3 +10,6 @@ export default function PriorityDot({ priority }: { priority: TaskPriority }) {
     </span>
   )
 }
+
+
+

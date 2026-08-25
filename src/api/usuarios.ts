@@ -5,7 +5,7 @@
  */
 import { api, IS_MOCK } from './client'
 import * as mock from './mock/db'
-import type { Member } from '../types'
+import type { Member } from '../core/types'
 
 export async function listarUsuarios(): Promise<Member[]> {
   if (IS_MOCK) return mock.listarUsuarios()
@@ -24,3 +24,6 @@ export async function atualizarUsuario(id: string, body: Partial<Member>): Promi
   const { data } = await api.patch<Member>(`/usuarios/${id}`, body)
   return data
 }
+
+
+
