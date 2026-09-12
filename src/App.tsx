@@ -21,16 +21,16 @@ export default function App() {
 
   // Carrega dados iniciais via API (mock ou real, conforme IS_MOCK)
   useEffect(() => {
-    Promise.all([
+    Promise.allSettled([
       api.projetos.listarProjetos(),
       api.tarefas.listarTarefas(),
       api.sprints.listarSprints(),
       api.usuarios.listarUsuarios(),
     ]).then(([p, t, s, m]) => {
-      setProjects(p)
-      setTasks(t)
-      setSprints(s)
-      setMembers(m)
+      if (p.status === 'fulfilled') setProjects(p.value)
+      if (t.status === 'fulfilled') setTasks(t.value)
+      if (s.status === 'fulfilled') setSprints(s.value)
+      if (m.status === 'fulfilled') setMembers(m.value)
       setLoading(false)
     })
   }, [])
