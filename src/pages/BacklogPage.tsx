@@ -64,7 +64,7 @@ function KanbanBoard({ tasks, projColors }: { tasks: Task[]; projColors: Record<
             </div>
             <div style={{ padding: '10px 10px', display: 'flex', flexDirection: 'column', gap: 8, minHeight: 80, maxHeight: 'calc(100vh - 280px)', overflowY: 'auto' }}>
               {colTasks.length === 0 && <div style={{ padding: '20px 0', textAlign: 'center', color: c.textMuted, fontSize: 12 }}>Nenhuma tarefa</div>}
-              {colTasks.map((task) => <KanbanCard key={task.id} task={task} projColors={projColors} />)}
+              {colTasks.map((task, index) => <KanbanCard key={`${task.id}-${index}`} task={task} projColors={projColors} />)}
             </div>
           </div>
         )
@@ -224,7 +224,7 @@ export default function BacklogPage({ tasks, projects, members: _members, onCrea
                   const isCancelled = task.status === 'cancelada'
                   const isOverdue = task.daysDelayed > 0
                   return (
-                    <tr key={task.id} style={{ borderBottom: i < filtered.length - 1 ? `1px solid ${c.border}` : 'none', opacity: isCancelled ? 0.6 : 1 }} onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = c.bg)} onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}>
+                    <tr key={`${task.id}-${i}`} style={{ borderBottom: i < filtered.length - 1 ? `1px solid ${c.border}` : 'none', opacity: isCancelled ? 0.6 : 1 }} onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = c.bg)} onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}>
                       <td style={{ padding: '11px 14px', fontSize: 11, fontFamily: 'var(--font-mono)', color: c.textMuted, whiteSpace: 'nowrap' }}>{task.id}</td>
                       <td style={{ padding: '11px 14px', minWidth: 220 }}>
                         <div style={{ fontSize: 13, fontWeight: 500, color: c.textPrimary, textDecoration: isCancelled ? 'line-through' : 'none' }}>{task.title}</div>

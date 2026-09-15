@@ -18,16 +18,35 @@ interface FiltrosTarefa {
   status?: string
 }
 
+function normalizarTarefa(task: Partial<Task> & { titulo?: string; nome?: string }): Task {
+  return {
+    id: String(task.id ?? ''),
+    title: task.title ?? task.titulo ?? task.nome ?? '',
+    project: task.project ?? '',
+    sprint: task.sprint ?? '',
+    assignee: task.assignee ?? '',
+    avatar: task.avatar ?? '',
+    avatarColor: task.avatarColor ?? '#9AA3B2',
+    priority: (task.priority && task.priority in { crítica: true, alta: true, média: true, baixa: true } ? task.priority : 'média') as Task['priority'],
+    status: (task.status ?? 'planejada') as Task['status'],
+    daysDelayed: task.daysDelayed ?? 0,
+    plannedEnd: task.plannedEnd ?? '',
+    estimatedHours: task.estimatedHours ?? 0,
+    blockedBy: task.blockedBy ?? null,
+    tags: task.tags ?? [],
+  }
+}
+
 export async function listarTarefas(filtros?: FiltrosTarefa): Promise<Task[]> {
   if (IS_MOCK) return mock.listarTarefas(filtros)
   const { data } = await api.get<Task[]>('/tarefas', { params: filtros })
-  return data
+  return data.map(normalizarTarefa)
 }
 
 export async function criarTarefa(body: Omit<Task, 'id'>): Promise<Task> {
   if (IS_MOCK) return mock.criarTarefa(body)
   const { data } = await api.post<Task>('/tarefas', body)
-  return data
+  return normalizarTarefa(data)
 }
 
 

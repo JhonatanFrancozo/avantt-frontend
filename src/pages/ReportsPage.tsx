@@ -139,8 +139,8 @@ export default function ReportsPage({ tasks, projects, members, sprints }: Props
           <div style={{ fontSize: 13, fontWeight: 600, color: c.textPrimary, marginBottom: 14 }}>Tarefas com Maior Atraso</div>
           {delayedTasks.length === 0 && <div style={{ fontSize: 12, color: c.textMuted, padding: '20px 0', textAlign: 'center' }}>Nenhuma tarefa atrasada! ✓</div>}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {delayedTasks.map((t) => (
-              <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', backgroundColor: c.bg, borderRadius: 8, transition: 'background-color 0.3s' }}>
+            {delayedTasks.map((t, index) => (
+              <div key={`${t.id}-${index}`} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', backgroundColor: c.bg, borderRadius: 8, transition: 'background-color 0.3s' }}>
                 <Avatar i={t.avatar} color={t.avatarColor} size={26} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 12, fontWeight: 500, color: c.textPrimary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.title}</div>

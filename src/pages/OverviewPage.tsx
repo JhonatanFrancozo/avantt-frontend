@@ -117,7 +117,7 @@ export default function OverviewPage({ tasks, sprints, members }: Props) {
                 </thead>
                 <tbody>
                   {sorted.map((task, i) => (
-                    <tr key={task.id} style={{ borderBottom: i < sorted.length - 1 ? `1px solid ${c.border}` : 'none' }} onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = c.bg)} onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}>
+                    <tr key={`${task.id}-${i}`} style={{ borderBottom: i < sorted.length - 1 ? `1px solid ${c.border}` : 'none' }} onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = c.bg)} onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}>
                       <td style={{ padding: '11px 14px', fontSize: 11, fontFamily: 'var(--font-mono)', color: c.textMuted }}>{task.id}</td>
                       <td style={{ padding: '11px 14px', minWidth: 200 }}>
                         <div style={{ fontSize: 13, fontWeight: 500, color: c.textPrimary }}>{task.title}</div>
