@@ -1,4 +1,4 @@
-import { c } from '../../core/theme'
+import { c } from '../../theme'
 
 interface Props {
   colors: string[]
@@ -19,6 +19,3 @@ export default function ColorPicker({ colors, value, onChange }: Props) {
     </div>
   )
 }
-
-
-

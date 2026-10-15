@@ -1,24 +1,25 @@
 import { useState, useMemo } from 'react'
-import { c, STATUS_META, STATUS_OPTIONS, PRIORITY_META } from '../core/theme'
+import { c, STATUS_META, STATUS_OPTIONS, PRIORITY_META } from '../theme'
 import { Avatar, Badge, PriorityDot, BtnPrimary, TagPill } from '../components/atoms'
 import ProgressBar from '../components/atoms/ProgressBar'
-import { fmtDateShort, delayColor } from '../core/utils'
-import { PRIORITY_ORDER } from '../core/constants'
-import type { Task, Project, Member, TaskStatus, TaskPriority } from '../core/types'
+import { fmtDateShort, delayColor } from '../utils'
+import { PRIORITY_ORDER } from '../constants'
+import type { Task, Project, Member, TaskStatus, TaskPriority } from '../types'
+import TaskDetailModal from '../modals/TaskDetailModal'
 
 // ── Kanban ─────────────────────────────────────────────────────────────────────
 
-function KanbanCard({ task, projColors }: { task: Task; projColors: Record<string, string> }) {
+function KanbanCard({ task, projColors, onClick }: { task: Task; projColors: Record<string, string>; onClick: () => void }) {
   const priMeta = PRIORITY_META[task.priority]
   return (
-    <div style={{ backgroundColor: c.surface, border: `1px solid ${task.status === 'bloqueada' ? 'var(--color-red)44' : c.border}`, borderRadius: 9, padding: '11px 13px', display: 'flex', flexDirection: 'column', gap: 8, cursor: 'default', transition: 'box-shadow 0.15s, background-color 0.3s', opacity: task.status === 'cancelada' ? 0.6 : 1 }} onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.boxShadow = '0 2px 10px rgba(0,0,0,0.08)' }} onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.boxShadow = 'none' }}>
+    <div onClick={onClick} style={{ backgroundColor: c.surface, border: `1px solid ${task.status === 'Bloqueada' ? 'var(--color-red)44' : c.border}`, borderRadius: 9, padding: '11px 13px', display: 'flex', flexDirection: 'column', gap: 8, cursor: 'pointer', transition: 'box-shadow 0.15s, background-color 0.3s', opacity: 1 }} onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.boxShadow = '0 2px 10px rgba(0,0,0,0.08)' }} onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.boxShadow = 'none' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: c.textMuted }}>{task.id}</span>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, color: c.textSecondary }}>
           <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: priMeta.dot, flexShrink: 0 }} />{priMeta.label}
         </span>
       </div>
-      <div style={{ fontSize: 13, fontWeight: 500, color: c.textPrimary, lineHeight: 1.4, textDecoration: task.status === 'cancelada' ? 'line-through' : 'none' }}>{task.title}</div>
+      <div style={{ fontSize: 13, fontWeight: 500, color: c.textPrimary, lineHeight: 1.4 }}>{task.title}</div>
       {task.blockedBy && (
         <div style={{ fontSize: 11, color: c.red, display: 'flex', alignItems: 'flex-start', gap: 4, backgroundColor: c.redLight, padding: '5px 7px', borderRadius: 5, transition: 'background-color 0.3s' }}>
           <span style={{ flexShrink: 0 }}>⚠</span><span style={{ lineHeight: 1.35 }}>{task.blockedBy}</span>
@@ -47,7 +48,7 @@ function KanbanCard({ task, projColors }: { task: Task; projColors: Record<strin
   )
 }
 
-function KanbanBoard({ tasks, projColors }: { tasks: Task[]; projColors: Record<string, string> }) {
+function KanbanBoard({ tasks, projColors, onTaskClick }: { tasks: Task[]; projColors: Record<string, string>; onTaskClick: (t: Task) => void }) {
   return (
     <div style={{ display: 'flex', gap: 12, overflowX: 'auto', alignItems: 'flex-start', paddingBottom: 8 }}>
       {STATUS_OPTIONS.map((status) => {
@@ -64,7 +65,7 @@ function KanbanBoard({ tasks, projColors }: { tasks: Task[]; projColors: Record<
             </div>
             <div style={{ padding: '10px 10px', display: 'flex', flexDirection: 'column', gap: 8, minHeight: 80, maxHeight: 'calc(100vh - 280px)', overflowY: 'auto' }}>
               {colTasks.length === 0 && <div style={{ padding: '20px 0', textAlign: 'center', color: c.textMuted, fontSize: 12 }}>Nenhuma tarefa</div>}
-              {colTasks.map((task, index) => <KanbanCard key={`${task.id}-${index}`} task={task} projColors={projColors} />)}
+              {colTasks.map((task) => <KanbanCard key={task.id} task={task} projColors={projColors} onClick={() => onTaskClick(task)} />)}
             </div>
           </div>
         )
@@ -80,9 +81,12 @@ interface Props {
   projects: Project[]
   members: Member[]
   onCreateTask: () => void
+  canCreate?: boolean
 }
 
-export default function BacklogPage({ tasks, projects, members: _members, onCreateTask }: Props) {
+export default function BacklogPage({ tasks: initialTasks, projects, members: _members, onCreateTask, canCreate = true }: Props) {
+  const [tasks, setTasks] = useState(initialTasks)
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const [view, setView] = useState<'list' | 'kanban'>('list')
   const [filterStatus, setFilterStatus] = useState<TaskStatus | ''>('')
   const [filterProject, setFilterProject] = useState('')
@@ -157,7 +161,7 @@ export default function BacklogPage({ tasks, projects, members: _members, onCrea
               </button>
             ))}
           </div>
-          <BtnPrimary onClick={onCreateTask}>＋ Nova Tarefa</BtnPrimary>
+          {canCreate && <BtnPrimary onClick={onCreateTask}>＋ Nova Tarefa</BtnPrimary>}
         </div>
       </div>
 
@@ -190,7 +194,7 @@ export default function BacklogPage({ tasks, projects, members: _members, onCrea
         </div>
       </div>
 
-      {view === 'kanban' && <KanbanBoard tasks={filtered} projColors={projColors} />}
+      {view === 'kanban' && <KanbanBoard tasks={filtered} projColors={projColors} onTaskClick={setSelectedTask} />}
 
       {view === 'list' && (
         <div style={{ backgroundColor: c.surface, border: `1px solid ${c.border}`, borderRadius: 10, overflow: 'hidden', flex: 1, transition: 'background-color 0.3s' }}>
@@ -221,10 +225,10 @@ export default function BacklogPage({ tasks, projects, members: _members, onCrea
                   <tr><td colSpan={10} style={{ padding: '48px', textAlign: 'center', color: c.textMuted, fontSize: 13 }}>Nenhuma tarefa encontrada com os filtros selecionados.</td></tr>
                 )}
                 {filtered.map((task, i) => {
-                  const isCancelled = task.status === 'cancelada'
+                  const isCancelled = false
                   const isOverdue = task.daysDelayed > 0
                   return (
-                    <tr key={`${task.id}-${i}`} style={{ borderBottom: i < filtered.length - 1 ? `1px solid ${c.border}` : 'none', opacity: isCancelled ? 0.6 : 1 }} onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = c.bg)} onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}>
+                    <tr key={task.id} onClick={() => setSelectedTask(task)} style={{ borderBottom: i < filtered.length - 1 ? `1px solid ${c.border}` : 'none', opacity: isCancelled ? 0.6 : 1, cursor: 'pointer' }} onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = c.bg)} onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}>
                       <td style={{ padding: '11px 14px', fontSize: 11, fontFamily: 'var(--font-mono)', color: c.textMuted, whiteSpace: 'nowrap' }}>{task.id}</td>
                       <td style={{ padding: '11px 14px', minWidth: 220 }}>
                         <div style={{ fontSize: 13, fontWeight: 500, color: c.textPrimary, textDecoration: isCancelled ? 'line-through' : 'none' }}>{task.title}</div>
@@ -264,9 +268,17 @@ export default function BacklogPage({ tasks, projects, members: _members, onCrea
           </div>
         </div>
       )}
+
+      {selectedTask && (
+        <TaskDetailModal
+          task={selectedTask}
+          onClose={() => setSelectedTask(null)}
+          onSave={(updated) => {
+            setTasks((ts) => ts.map((t) => t.id === updated.id ? updated : t))
+            setSelectedTask(null)
+          }}
+        />
+      )}
     </div>
   )
 }
-
-
-

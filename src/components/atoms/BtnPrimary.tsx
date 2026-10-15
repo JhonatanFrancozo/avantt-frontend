@@ -1,13 +1,42 @@
 import type { ReactNode } from 'react'
-import { c } from '../../core/theme'
 
-export default function BtnPrimary({ onClick, children }: { onClick: () => void; children: ReactNode }) {
+interface Props {
+  onClick?: () => void
+  children: ReactNode
+  variant?: 'primary' | 'secondary' | 'ghost' | 'link'
+  type?: 'button' | 'submit'
+  fullWidth?: boolean
+  disabled?: boolean
+  ariaLabel?: string
+  compact?: boolean
+}
+
+const variants = {
+  primary: 'bg-blue text-white shadow-lg shadow-blue/20 hover:bg-blue/90',
+  secondary: 'border border-border bg-surface text-text-primary hover:bg-blue-light',
+  ghost: 'text-text-secondary hover:bg-blue-light hover:text-blue',
+  link: 'text-blue hover:text-blue/80',
+}
+
+export default function BtnPrimary({
+  onClick,
+  children,
+  variant = 'primary',
+  type = 'button',
+  fullWidth,
+  disabled,
+  ariaLabel,
+  compact,
+}: Props) {
   return (
-    <button onClick={onClick} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 8, border: 'none', backgroundColor: c.blue, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-sans)', whiteSpace: 'nowrap' }}>
+    <button
+      type={type}
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={ariaLabel}
+      className={`inline-flex items-center justify-center gap-2 rounded-lg text-sm font-semibold whitespace-nowrap transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue disabled:cursor-not-allowed disabled:opacity-50 ${compact ? 'rounded-full p-0' : 'px-4 py-2.5'} ${variants[variant]} ${fullWidth ? 'w-full' : ''}`}
+    >
       {children}
     </button>
   )
 }
-
-
-

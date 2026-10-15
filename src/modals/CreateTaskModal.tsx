@@ -1,36 +1,62 @@
-import { useState, useMemo } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import Modal from '../components/Modal'
 import { Field, Inp, Sel, Textarea } from '../components/form'
 import { inputStyle } from '../components/form'
-import { Badge, PriorityDot, TagPill } from '../components/atoms'
+import { Badge, BtnPrimary, PriorityDot, TagPill } from '../components/atoms'
 import MemberPickerRow from '../components/MemberPickerRow'
-import { c, STATUS_META, STATUS_OPTIONS } from '../core/theme'
-import { mkInitials, nextTaskId } from '../core/utils'
-import type { Task, Project, Member, TaskPriority, TaskStatus } from '../core/types'
+import { c, STATUS_META, STATUS_OPTIONS } from '../theme'
+import { mkInitials, nextTaskId } from '../utils'
+import type { Task, Project, Member, Sprint, TaskPriority, TaskStatus } from '../types'
+import * as api from '../api'
+import type { CatalogItem } from '../api/catalogos'
 
 interface Props {
   projects: Project[]
   tasks: Task[]
   members: Member[]
+  sprints: Sprint[]
   onClose: () => void
   onSave: (t: Omit<Task, 'id'>) => void
 }
 
-export default function CreateTaskModal({ projects, tasks, members, onClose, onSave }: Props) {
+export default function CreateTaskModal({ projects, tasks: _tasks, members, sprints, onClose, onSave }: Props) {
   const [title, setTitle] = useState('')
   const [project, setProject] = useState('')
   const [sprint, setSprint] = useState('')
   const [assignee, setAssignee] = useState('')
   const [priority, setPriority] = useState<TaskPriority>('média')
-  const [status, setStatus] = useState<TaskStatus>('planejada')
+  const [status, setStatus] = useState<TaskStatus>('Planejada')
   const [plannedEnd, setPlannedEnd] = useState('')
   const [estimatedHours, setEstimatedHours] = useState('')
   const [blockedBy, setBlockedBy] = useState('')
   const [tagInput, setTagInput] = useState('')
   const [tags, setTags] = useState<string[]>([])
+  const [tagIds, setTagIds] = useState<number[]>([])
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [statusCatalog, setStatusCatalog] = useState<CatalogItem[]>([])
+  const [priorityCatalog, setPriorityCatalog] = useState<CatalogItem[]>([])
+  const [tagCatalog, setTagCatalog] = useState<CatalogItem[]>([])
 
-  const sprintOptions = useMemo(() => [...new Set(tasks.map((t) => t.sprint))].sort(), [tasks])
+  useEffect(() => {
+    Promise.all([
+      api.catalogos.listarStatus(),
+      api.catalogos.listarPrioridades(),
+      api.catalogos.listarTags(),
+    ]).then(([availableStatus, availablePriorities, availableTags]) => {
+      setStatusCatalog(availableStatus)
+      setPriorityCatalog(availablePriorities)
+      setTagCatalog(availableTags)
+    }).catch(() => {
+      setStatusCatalog([])
+      setPriorityCatalog([])
+      setTagCatalog([])
+    })
+  }, [])
+
+  const sprintOptions = useMemo(
+    () => sprints.filter((item) => !project || item.project === project),
+    [project, sprints],
+  )
   const filteredMembers = useMemo(
     () => (project ? members.filter((m) => m.projects.includes(project)) : members),
     [project, members],
@@ -50,12 +76,46 @@ export default function CreateTaskModal({ projects, tasks, members, onClose, onS
   function submit() {
     if (!validate()) return
     const m = members.find((x) => x.name === assignee)
-    onSave({ title: title.trim(), project, sprint: sprint.trim(), assignee, avatar: m?.avatar ?? mkInitials(assignee), avatarColor: m?.color ?? '#4B7BF5', priority, status, daysDelayed: 0, plannedEnd, estimatedHours: parseFloat(estimatedHours) || 0, blockedBy: blockedBy.trim() || null, tags })
+    const selectedProject = projects.find((item) => item.name === project)
+    const selectedSprint = sprints.find((item) => item.name === sprint)
+    const selectedStatus = statusCatalog.find((item) => item.nome === status)
+    const selectedPriority = priorityCatalog.find((item) => item.nome.toLocaleLowerCase('pt-BR') === priority)
+    onSave({
+      title: title.trim(),
+      project,
+      projectId: selectedProject ? Number(String(selectedProject.id).replace(/\D/g, '')) : undefined,
+      sprint: sprint.trim(),
+      sprintId: selectedSprint?.id,
+      assignee,
+      assigneeId: m ? Number(String(m.id).replace(/\D/g, '')) : undefined,
+      avatar: m?.avatar ?? mkInitials(assignee),
+      avatarColor: m?.color ?? '#4B7BF5',
+      priority,
+      priorityId: selectedPriority?.id,
+      status,
+      statusId: selectedStatus?.id ?? {
+        Planejada: 1,
+        'Em andamento': 2,
+        Concluída: 3,
+        Bloqueada: 4,
+      }[status],
+      daysDelayed: 0,
+      plannedEnd,
+      estimatedHours: parseFloat(estimatedHours) || 0,
+      blockedBy: blockedBy.trim() || null,
+      tags,
+      tagIds,
+    })
   }
 
   function addTag() {
     const t = tagInput.trim().toLowerCase()
-    if (t && !tags.includes(t)) { setTags((ts) => [...ts, t]); setTagInput('') }
+    const catalogTag = tagCatalog.find((item) => item.nome.toLowerCase() === t)
+    if (catalogTag && !tags.includes(t)) {
+      setTags((current) => [...current, t])
+      setTagIds((current) => [...current, catalogTag.id])
+      setTagInput('')
+    }
   }
 
   const selectedProject = project ? projects.find((p) => p.name === project) : undefined
@@ -68,11 +128,10 @@ export default function CreateTaskModal({ projects, tasks, members, onClose, onS
             <Inp value={title} onChange={setTitle} placeholder="Ex: Implementar endpoint de autenticação" />
           </Field>
           <Field label="Projeto" required error={errors.project}>
-            <Sel value={project} onChange={(v) => { setProject(v); setAssignee('') }} options={projects.map((p) => ({ value: p.name, label: p.name }))} />
+            <Sel value={project} onChange={(v) => { setProject(v); setSprint(''); setAssignee('') }} options={projects.map((p) => ({ value: p.name, label: p.name }))} />
           </Field>
           <Field label="Sprint" required error={errors.sprint}>
-            <Sel value={sprint} onChange={setSprint} options={sprintOptions.map((s) => ({ value: s, label: s }))} />
-            <Inp value={sprint} onChange={setSprint} placeholder="Ou digite: Sprint 15…" />
+            <Sel value={sprint} onChange={setSprint} options={sprintOptions.map((item) => ({ value: item.name, label: item.name }))} />
           </Field>
           <Field label="Responsável" required error={errors.assignee}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 5, maxHeight: 180, overflowY: 'auto' }}>
@@ -86,10 +145,33 @@ export default function CreateTaskModal({ projects, tasks, members, onClose, onS
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             <Field label="Prioridade">
-              <Sel value={priority} onChange={(v) => setPriority(v as TaskPriority)} options={[{ value: 'crítica', label: '🔴 Crítica' }, { value: 'alta', label: '🟠 Alta' }, { value: 'média', label: '🔵 Média' }, { value: 'baixa', label: '🟢 Baixa' }]} />
+              <Sel
+                value={priority}
+                onChange={(v) => setPriority(v as TaskPriority)}
+                options={(priorityCatalog.length ? priorityCatalog : [
+                  { id: 1, nome: 'Baixa' },
+                  { id: 2, nome: 'Média' },
+                  { id: 3, nome: 'Alta' },
+                ]).map((item) => ({
+                  value: item.nome.toLocaleLowerCase('pt-BR') as TaskPriority,
+                  label: item.nome,
+                }))}
+              />
             </Field>
             <Field label="Status">
-              <Sel value={status} onChange={(v) => setStatus(v as TaskStatus)} options={STATUS_OPTIONS.map((s) => ({ value: s, label: STATUS_META[s].label }))} />
+              <Sel
+                value={status}
+                onChange={(v) => setStatus(v as TaskStatus)}
+                options={(statusCatalog.length
+                  ? statusCatalog
+                    .map((item) => item.nome)
+                    .filter((name): name is TaskStatus => STATUS_OPTIONS.includes(name as TaskStatus))
+                  : STATUS_OPTIONS
+                ).map((availableStatus) => ({
+                  value: availableStatus,
+                  label: STATUS_META[availableStatus]?.label ?? availableStatus,
+                }))}
+              />
             </Field>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
@@ -110,7 +192,28 @@ export default function CreateTaskModal({ projects, tasks, members, onClose, onS
             </div>
             {tags.length > 0 && (
               <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginTop: 6 }}>
-                {tags.map((tag) => <TagPill key={tag} tag={tag} onRemove={() => setTags((ts) => ts.filter((t) => t !== tag))} />)}
+                {tags.map((tag) => <TagPill key={tag} tag={tag} onRemove={() => {
+                  const catalogTag = tagCatalog.find((item) => item.nome.toLowerCase() === tag)
+                  setTags((current) => current.filter((item) => item !== tag))
+                  if (catalogTag) setTagIds((current) => current.filter((id) => id !== catalogTag.id))
+                }} />)}
+              </div>
+            )}
+            {tagCatalog.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {tagCatalog.filter((item) => !tags.includes(item.nome.toLowerCase())).map((item) => (
+                  <BtnPrimary
+                    key={item.id}
+                    variant="secondary"
+                    compact
+                    onClick={() => {
+                      setTags((current) => [...current, item.nome.toLowerCase()])
+                      setTagIds((current) => [...current, item.id])
+                    }}
+                  >
+                    <span className="rounded-full px-2.5 py-1 text-xs font-medium">{item.nome}</span>
+                  </BtnPrimary>
+                ))}
               </div>
             )}
           </Field>
@@ -133,6 +236,3 @@ export default function CreateTaskModal({ projects, tasks, members, onClose, onS
     </Modal>
   )
 }
-
-
-

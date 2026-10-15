@@ -2,8 +2,8 @@ import { useState, useMemo } from 'react'
 import Modal from '../components/Modal'
 import { Field, Inp, Sel, Textarea } from '../components/form'
 import MemberPickerRow from '../components/MemberPickerRow'
-import { c } from '../core/theme'
-import type { Sprint, Project, Member } from '../core/types'
+import { c } from '../theme'
+import type { Sprint, Project, Member } from '../types'
 
 interface Props {
   projects: Project[]
@@ -39,7 +39,23 @@ export default function CreateSprintModal({ projects, members, onClose, onSave }
 
   function submit() {
     if (!validate()) return
-    onSave({ name: name.trim(), project, startDate, endDate, daysDelayed: 0, progress: 0, totalTasks: 0, doneTasks: 0, blockedTasks: 0, team, goal: goal.trim() })
+    const selectedProject = projects.find((item) => item.name === project)
+    onSave({
+      name: name.trim(),
+      project,
+      projectId: selectedProject ? Number(String(selectedProject.id).replace(/\D/g, '')) : undefined,
+      statusId: 2,
+      startDate,
+      endDate,
+      daysDelayed: 0,
+      progress: 0,
+      totalTasks: 0,
+      doneTasks: 0,
+      blockedTasks: 0,
+      team,
+      teamIds: members.filter((member) => team.includes(member.name)).map((member) => Number(member.id.replace(/\D/g, ''))),
+      goal: goal.trim(),
+    })
   }
 
   function toggleMember(memberName: string) {
@@ -90,6 +106,3 @@ export default function CreateSprintModal({ projects, members, onClose, onSave }
     </Modal>
   )
 }
-
-
-

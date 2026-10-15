@@ -1,11 +1,11 @@
 import { useState, useMemo } from 'react'
-import { c } from '../core/theme'
+import { c } from '../theme'
 import { Avatar, Badge, PriorityDot, StatCard } from '../components/atoms'
 import ProgressBar from '../components/atoms/ProgressBar'
-import { fmtDateShort } from '../core/utils'
-import { delayColor, delayHex } from '../core/utils'
-import { PRIORITY_ORDER } from '../core/constants'
-import type { Task, Sprint, Member } from '../core/types'
+import { fmtDateShort } from '../utils'
+import { delayColor, delayHex } from '../utils'
+import { PRIORITY_ORDER } from '../constants'
+import type { Task, Sprint, Member } from '../types'
 
 interface Props {
   tasks: Task[]
@@ -18,7 +18,7 @@ export default function OverviewPage({ tasks, sprints, members }: Props) {
   const [sortKey, setSortKey] = useState<'daysDelayed' | 'priority'>('daysDelayed')
 
   const delayed = useMemo(() => tasks.filter((t) => t.daysDelayed > 0), [tasks])
-  const blocked = useMemo(() => tasks.filter((t) => t.status === 'bloqueada'), [tasks])
+  const blocked = useMemo(() => tasks.filter((t) => t.status === 'Bloqueada'), [tasks])
 
   const sorted = useMemo(() => {
     return [...delayed].sort((a, b) => {
@@ -45,9 +45,9 @@ export default function OverviewPage({ tasks, sprints, members }: Props) {
 
       <div style={{ display: 'flex', gap: 14 }}>
         <StatCard label="Tarefas Atrasadas" value={delayed.length} sub="em todos os projetos" color={c.red} icon="⏰" />
-        <StatCard label="Sprints em Atraso" value={`${sprintsDelayed}/${sprints.length}`} sub={`Pior: +${Math.max(0, ...sprints.map((s) => s.daysDelayed))}d`} color={c.amber} icon="🏃" />
+        <StatCard label="Sprints em Atraso" value={`${sprintsDelayed}/${sprints.length}`} sub={`Pior: +${sprints.length ? Math.max(0, ...sprints.map((s) => s.daysDelayed)) : 0}d`} color={c.amber} icon="S" />
         <StatCard label="Membros Sobrecarregados" value={overloaded} sub={`de ${members.length} na equipe`} color={c.purple} icon="👤" />
-        <StatCard label="Total de Tarefas" value={tasks.length} sub={`${tasks.filter((t) => t.status === 'concluída').length} concluídas`} color={c.blue} icon="✓" />
+        <StatCard label="Total de Tarefas" value={tasks.length} sub={`${tasks.filter((t) => t.status === 'Concluída').length} concluídas`} color={c.blue} icon="✓" />
       </div>
 
       <section>
@@ -117,7 +117,7 @@ export default function OverviewPage({ tasks, sprints, members }: Props) {
                 </thead>
                 <tbody>
                   {sorted.map((task, i) => (
-                    <tr key={`${task.id}-${i}`} style={{ borderBottom: i < sorted.length - 1 ? `1px solid ${c.border}` : 'none' }} onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = c.bg)} onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}>
+                    <tr key={task.id} style={{ borderBottom: i < sorted.length - 1 ? `1px solid ${c.border}` : 'none' }} onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = c.bg)} onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}>
                       <td style={{ padding: '11px 14px', fontSize: 11, fontFamily: 'var(--font-mono)', color: c.textMuted }}>{task.id}</td>
                       <td style={{ padding: '11px 14px', minWidth: 200 }}>
                         <div style={{ fontSize: 13, fontWeight: 500, color: c.textPrimary }}>{task.title}</div>
@@ -177,6 +177,3 @@ export default function OverviewPage({ tasks, sprints, members }: Props) {
     </div>
   )
 }
-
-
-

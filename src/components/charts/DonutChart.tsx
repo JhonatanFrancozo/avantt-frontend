@@ -27,6 +27,3 @@ export default function DonutChart({ slices, size = 120 }: { slices: Slice[]; si
     </svg>
   )
 }
-
-
-

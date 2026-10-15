@@ -1,12 +1,13 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Modal from '../components/Modal'
-import { Field, Inp, Textarea, ColorPicker } from '../components/form'
+import { Field, Inp, Textarea, ColorPicker, Sel } from '../components/form'
 import { inputStyle } from '../components/form'
 import MemberPickerRow from '../components/MemberPickerRow'
-import { c } from '../core/theme'
-import { fmtDateShort } from '../core/utils'
-import { PROJ_PALETTE } from '../core/constants'
-import type { Project, Member } from '../core/types'
+import { c } from '../theme'
+import { fmtDateShort } from '../utils'
+import { PROJ_PALETTE } from '../constants'
+import type { Project, Member, Client } from '../types'
+import * as api from '../api'
 
 interface Props {
   members: Member[]
@@ -17,6 +18,8 @@ interface Props {
 export default function CreateProjectModal({ members, onClose, onSave }: Props) {
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
+  const [clientId, setClientId] = useState('')
+  const [clients, setClients] = useState<Client[]>([])
   const [color, setColor] = useState(PROJ_PALETTE[0])
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
@@ -28,19 +31,28 @@ export default function CreateProjectModal({ members, onClose, onSave }: Props) 
   const [milestones, setMilestones] = useState<{ name: string; date: string; done: boolean }[]>([])
   const [errors, setErrors] = useState<Record<string, string>>({})
 
+  useEffect(() => {
+    api.clientes.listarClientes().then(setClients).catch(() => setClients([]))
+  }, [])
+
   function validate() {
     const e: Record<string, string> = {}
     if (!name.trim()) e.name = 'Nome obrigatório'
     if (!startDate) e.startDate = 'Data de início obrigatória'
     if (!endDate) e.endDate = 'Data de fim obrigatória'
     if (startDate && endDate && startDate >= endDate) e.endDate = 'Data de fim deve ser após início'
+    if (startDate && endDate) {
+      const days = Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / 86400000)
+      if (days < 15) e.endDate = 'O projeto deve ter duração mínima de 15 dias'
+    }
     setErrors(e)
     return Object.keys(e).length === 0
   }
 
   function submit() {
     if (!validate()) return
-    onSave({ name: name.trim(), description: description.trim(), color, status: 'em andamento', startDate, endDate, progress: 0, sprints: { total: 0, done: 0, active: 0, delayed: 0 }, tasks: { total: 0, done: 0, delayed: 0, blocked: 0, cancelled: 0 }, team, risks, milestones })
+    const client = clients.find((item) => String(item.id) === clientId)
+    onSave({ name: name.trim(), description: description.trim(), clientId: client?.id ?? null, clientName: client?.name, color, status: 'Em andamento', startDate, endDate, progress: 0, sprints: { total: 0, done: 0, active: 0, delayed: 0 }, tasks: { total: 0, done: 0, delayed: 0, blocked: 0, cancelled: 0 }, team, teamIds: members.filter((member) => team.includes(member.name)).map((member) => Number(member.id.replace(/\D/g, ''))), risks, milestones })
   }
 
   function toggleMember(memberName: string) {
@@ -67,6 +79,13 @@ export default function CreateProjectModal({ members, onClose, onSave }: Props) 
           </Field>
           <Field label="Descrição">
             <Textarea value={description} onChange={setDescription} placeholder="Objetivo do projeto…" />
+          </Field>
+          <Field label="Cliente">
+            <Sel
+              value={clientId}
+              onChange={setClientId}
+              options={clients.map((client) => ({ value: String(client.id), label: client.name }))}
+            />
           </Field>
           <Field label="Cor">
             <ColorPicker colors={PROJ_PALETTE} value={color} onChange={setColor} />
@@ -124,6 +143,3 @@ export default function CreateProjectModal({ members, onClose, onSave }: Props) 
     </Modal>
   )
 }
-
-
-

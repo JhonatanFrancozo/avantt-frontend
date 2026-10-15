@@ -1,19 +1,21 @@
 import { useState, useMemo } from 'react'
-import { c } from '../core/theme'
+import { c } from '../theme'
 import { Avatar, BtnPrimary, StatCard } from '../components/atoms'
 import ProgressBar from '../components/atoms/ProgressBar'
-import { workloadColor } from '../core/utils'
+import { workloadColor } from '../utils'
 import EditMemberProjectsModal from '../modals/EditMemberProjectsModal'
-import type { Member, Project } from '../core/types'
+import type { Member, Project } from '../types'
+import { EmptyState } from '../components/layout'
 
 interface Props {
   members: Member[]
   projects: Project[]
   onAddMember: () => void
   onUpdateMember: (m: Member) => void
+  canManage?: boolean
 }
 
-export default function TeamPage({ members, projects, onAddMember, onUpdateMember }: Props) {
+export default function TeamPage({ members, projects, onAddMember, onUpdateMember, canManage = true }: Props) {
   const [filterProject, setFilterProject] = useState('')
   const [filterRole, setFilterRole] = useState('')
   const [editingMember, setEditingMember] = useState<Member | null>(null)
@@ -49,7 +51,7 @@ export default function TeamPage({ members, projects, onAddMember, onUpdateMembe
             <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: c.textPrimary }}>{filtered.length}</span> membro{filtered.length !== 1 ? 's' : ''}
           </div>
         </div>
-        <BtnPrimary onClick={onAddMember}>＋ Adicionar Membro</BtnPrimary>
+        {canManage && <BtnPrimary onClick={onAddMember}>＋ Adicionar Membro</BtnPrimary>}
       </div>
 
       <div style={{ display: 'flex', gap: 12 }}>
@@ -60,6 +62,14 @@ export default function TeamPage({ members, projects, onAddMember, onUpdateMembe
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
+        {filtered.length === 0 && (
+          <EmptyState
+            title={members.length ? 'Nenhum membro encontrado' : 'Sua equipe ainda está vazia'}
+            description={members.length ? 'Ajuste os filtros para encontrar outros membros.' : 'Adicione pessoas para distribuir tarefas e acompanhar a capacidade do time.'}
+            actionLabel={members.length ? undefined : 'Adicionar membro'}
+            onAction={members.length ? undefined : onAddMember}
+          />
+        )}
         {filtered.map((m) => (
           <div key={m.id} style={{ backgroundColor: c.surface, border: `1px solid ${m.workload >= 85 ? '#D9505033' : c.border}`, borderRadius: 12, overflow: 'hidden', display: 'flex', flexDirection: 'column', transition: 'background-color 0.3s' }}>
             <div style={{ height: 3, backgroundColor: m.color }} />
@@ -70,6 +80,7 @@ export default function TeamPage({ members, projects, onAddMember, onUpdateMembe
                   <div style={{ fontSize: 14, fontWeight: 600, color: c.textPrimary }}>{m.name}</div>
                   <div style={{ fontSize: 12, color: c.textMuted }}>{m.role}</div>
                   {m.email && <div style={{ fontSize: 11, color: c.textMuted, marginTop: 1 }}>{m.email}</div>}
+                  {m.inviteStatus === 'pending' && <div style={{ fontSize: 10, color: c.amber, marginTop: 3, fontWeight: 600 }}>CONVITE PENDENTE</div>}
                 </div>
                 {m.workload >= 85 && <span style={{ fontSize: 10, fontWeight: 600, color: c.red, backgroundColor: c.redLight, padding: '2px 6px', borderRadius: 4, flexShrink: 0 }}>SOBRECARR.</span>}
               </div>
@@ -115,9 +126,11 @@ export default function TeamPage({ members, projects, onAddMember, onUpdateMembe
                 })}
               </div>
 
-              <button onClick={() => setEditingMember(m)} style={{ padding: '6px 0', borderRadius: 7, border: `1px solid ${c.border}`, backgroundColor: 'transparent', color: c.textSecondary, fontSize: 12, cursor: 'pointer', fontFamily: 'var(--font-sans)', width: '100%' }}>
-                Editar projetos atribuídos
-              </button>
+              {canManage && (
+                <button onClick={() => setEditingMember(m)} style={{ padding: '6px 0', borderRadius: 7, border: `1px solid ${c.border}`, backgroundColor: 'transparent', color: c.textSecondary, fontSize: 12, cursor: 'pointer', fontFamily: 'var(--font-sans)', width: '100%' }}>
+                  Editar projetos atribuídos
+                </button>
+              )}
             </div>
           </div>
         ))}
@@ -134,6 +147,3 @@ export default function TeamPage({ members, projects, onAddMember, onUpdateMembe
     </div>
   )
 }
-
-
-

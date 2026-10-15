@@ -1,122 +1,98 @@
-import { useState, useEffect } from 'react'
-import { useTheme, c } from './core/theme'
-import { TODAY_STR } from './core/utils'
+import { useEffect, useState } from 'react'
+import { useTheme } from './theme'
+import MarketingPage from './pages/MarketingPage'
+import AuthPage from './pages/AuthPage'
+import AccessPendingPage from './pages/AccessPendingPage'
+import DashboardApp from './DashboardApp'
+import DevDashboardApp from './DevDashboardApp'
 import * as api from './api'
-import { txt } from './core/content'
-import { Sidebar, PageHeader } from './components/layout'
-import { BtnPrimary } from './components/atoms'
-import { CreateProjectModal, CreateTaskModal, CreateSprintModal, CreateMemberModal } from './modals'
-import { OverviewPage, ProjectsPage, SprintsPage, BacklogPage, TeamPage, ReportsPage } from './pages'
-import type { Page, ActiveModal, Task, Project, Sprint, Member } from './core/types'
+import type { AuthSession, LoginPayload, SignupPayload } from './types'
+
+type AppView = 'marketing' | 'auth' | 'dashboard'
+type AuthMode = 'login' | 'signup'
 
 export default function App() {
+  const [session, setSession] = useState<AuthSession | null>(() => api.auth.loadSession())
+  const [view, setView] = useState<AppView>(() => session ? 'dashboard' : 'marketing')
+  const [authMode, setAuthMode] = useState<AuthMode>('login')
   const { dark, toggle } = useTheme()
-  const [page, setPage] = useState<Page>('overview')
-  const [projects, setProjects] = useState<Project[]>([])
-  const [tasks, setTasks] = useState<Task[]>([])
-  const [sprints, setSprints] = useState<Sprint[]>([])
-  const [members, setMembers] = useState<Member[]>([])
-  const [loading, setLoading] = useState(true)
-  const [activeModal, setActiveModal] = useState<ActiveModal>(null)
 
-  // Carrega dados iniciais via API (mock ou real, conforme IS_MOCK)
+  function openAuth(mode: AuthMode) {
+    setAuthMode(mode)
+    setView('auth')
+  }
+
+  async function authenticate(mode: AuthMode, payload: LoginPayload | SignupPayload) {
+    const nextSession = mode === 'login'
+      ? await api.auth.login(payload as LoginPayload)
+      : await api.auth.signup(payload as SignupPayload)
+    const remember = mode === 'login' ? (payload as LoginPayload).remember : true
+    api.auth.saveSession(nextSession, remember)
+    setSession(nextSession)
+    setView('dashboard')
+  }
+
+  function logout() {
+    api.auth.clearSession()
+    setSession(null)
+    setView('marketing')
+  }
+
+  function updateUser(user: AuthSession['user']) {
+    if (!session) return
+    const updatedSession = { ...session, user }
+    api.auth.saveSession(updatedSession, true)
+    setSession(updatedSession)
+  }
+
   useEffect(() => {
-    Promise.allSettled([
-      api.projetos.listarProjetos(),
-      api.tarefas.listarTarefas(),
-      api.sprints.listarSprints(),
-      api.usuarios.listarUsuarios(),
-    ]).then(([p, t, s, m]) => {
-      if (p.status === 'fulfilled') setProjects(p.value)
-      if (t.status === 'fulfilled') setTasks(t.value)
-      if (s.status === 'fulfilled') setSprints(s.value)
-      if (m.status === 'fulfilled') setMembers(m.value)
-      setLoading(false)
-    })
+    window.addEventListener('avantt:unauthorized', logout)
+    return () => window.removeEventListener('avantt:unauthorized', logout)
   }, [])
 
-  function closeModal() { setActiveModal(null) }
-
-  async function saveProject(body: Omit<Project, 'id'>) {
-    const created = await api.projetos.criarProjeto(body)
-    setProjects((ps) => [...ps, created])
-    closeModal()
+  if (view === 'dashboard') {
+    if (session?.user.role === 'developer' && !session.user.organizationId) {
+      return (
+        <AccessPendingPage
+          user={session.user}
+          dark={dark}
+          onToggleTheme={toggle}
+          onLogout={logout}
+          onUserUpdate={updateUser}
+          onLinked={(linkedSession) => {
+            api.auth.saveSession(linkedSession, true)
+            setSession(linkedSession)
+          }}
+        />
+      )
+    }
+    return session?.user.role === 'developer'
+      ? <DevDashboardApp user={session.user} onLogout={logout} onUserUpdate={updateUser} />
+      : <DashboardApp user={session?.user} onLogout={logout} onUserUpdate={updateUser} />
   }
 
-  async function saveTask(body: Omit<Task, 'id'>) {
-    const created = await api.tarefas.criarTarefa(body)
-    setTasks((ts) => [...ts, created])
-    closeModal()
-  }
-
-  async function saveSprint(body: Omit<Sprint, 'id'>) {
-    const created = await api.sprints.criarSprint(body)
-    setSprints((ss) => [...ss, created])
-    closeModal()
-  }
-
-  async function saveMember(body: Omit<Member, 'id'>) {
-    const created = await api.usuarios.criarUsuario(body)
-    setMembers((ms) => [...ms, created])
-    // A sincronização de projeto_usuario já é feita pelo mock/db ou pelo backend real
-    const updatedProjects = await api.projetos.listarProjetos()
-    setProjects(updatedProjects)
-    closeModal()
-  }
-
-  async function updateMember(updated: Member) {
-    const saved = await api.usuarios.atualizarUsuario(updated.id, updated)
-    setMembers((ms) => ms.map((m) => (m.id === saved.id ? saved : m)))
-    const updatedProjects = await api.projetos.listarProjetos()
-    setProjects(updatedProjects)
-  }
-
-  const PAGE_TITLE: Record<Page, string> = {
-    overview: txt.pagina.visaoGeral,
-    projects: txt.pagina.projetos,
-    sprints: txt.pagina.sprints,
-    backlog: txt.pagina.backlog,
-    team: txt.pagina.equipe,
-    reports: txt.pagina.relatorios,
-  }
-
-  if (loading) {
+  if (view === 'auth') {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', backgroundColor: c.bg, color: c.textMuted, fontSize: 14 }}>
-        {txt.geral.carregando}
-      </div>
+      <AuthPage
+        initialMode={authMode}
+        dark={dark}
+        onToggleTheme={toggle}
+        onBack={() => setView('marketing')}
+        onSubmit={authenticate}
+      />
     )
   }
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: c.bg, transition: 'background-color 0.3s' }}>
-      <Sidebar active={page} onNav={setPage} projects={projects} />
-
-      <main style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        <PageHeader title={PAGE_TITLE[page]} subtitle={page === 'overview' ? TODAY_STR : undefined} dark={dark} onToggle={toggle}>
-          {page === 'projects' && <BtnPrimary onClick={() => setActiveModal('project')}>{txt.btn.novoProjeto}</BtnPrimary>}
-          {page === 'sprints' && <BtnPrimary onClick={() => setActiveModal('sprint')}>{txt.btn.novaSprint}</BtnPrimary>}
-          {page === 'backlog' && <BtnPrimary onClick={() => setActiveModal('task')}>{txt.btn.novaTarefa}</BtnPrimary>}
-          {page === 'team' && <BtnPrimary onClick={() => setActiveModal('member')}>{txt.btn.adicionarMembro}</BtnPrimary>}
-        </PageHeader>
-
-        <div style={{ flex: 1, overflowY: 'auto' }}>
-          {page === 'overview' && <OverviewPage tasks={tasks} sprints={sprints} members={members} />}
-          {page === 'projects' && <ProjectsPage projects={projects} members={members} onCreateProject={() => setActiveModal('project')} />}
-          {page === 'sprints' && <SprintsPage sprints={sprints} projects={projects} members={members} onCreateSprint={() => setActiveModal('sprint')} />}
-          {page === 'backlog' && <BacklogPage tasks={tasks} projects={projects} members={members} onCreateTask={() => setActiveModal('task')} />}
-          {page === 'team' && <TeamPage members={members} projects={projects} onAddMember={() => setActiveModal('member')} onUpdateMember={updateMember} />}
-          {page === 'reports' && <ReportsPage tasks={tasks} projects={projects} members={members} sprints={sprints} />}
-        </div>
-      </main>
-
-      {activeModal === 'project' && <CreateProjectModal members={members} onClose={closeModal} onSave={saveProject} />}
-      {activeModal === 'task' && <CreateTaskModal projects={projects} tasks={tasks} members={members} onClose={closeModal} onSave={saveTask} />}
-      {activeModal === 'sprint' && <CreateSprintModal projects={projects} members={members} onClose={closeModal} onSave={saveSprint} />}
-      {activeModal === 'member' && <CreateMemberModal projects={projects} onClose={closeModal} onSave={saveMember} />}
-    </div>
+    <MarketingPage
+      dark={dark}
+      onToggleTheme={toggle}
+      onLogin={() => openAuth('login')}
+      onSignup={() => openAuth('signup')}
+      onDemo={() => {
+        setSession(null)
+        setView('dashboard')
+      }}
+    />
   )
 }
-
-
-

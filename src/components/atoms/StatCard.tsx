@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { c } from '../../core/theme'
+import { c } from '../../theme'
 
 interface Props {
   label: string
@@ -21,6 +21,3 @@ export default function StatCard({ label, value, sub, color, icon }: Props) {
     </div>
   )
 }
-
-
-

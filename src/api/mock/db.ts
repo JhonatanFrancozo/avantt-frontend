@@ -9,8 +9,8 @@
  *   sprint   → Sprint
  *   tarefa   → Task
  */
-import type { Member, Project, Sprint, Task } from '../../core/types'
-import { INIT_MEMBERS, INIT_PROJECTS, INIT_SPRINTS, INIT_TASKS } from '../../core/constants'
+import type { Member, Project, Sprint, Task } from '../../types'
+import { INIT_MEMBERS, INIT_PROJECTS, INIT_SPRINTS, INIT_TASKS } from '../../constants'
 
 const delay = (ms = 120) => new Promise<void>((r) => setTimeout(r, ms))
 
@@ -111,4 +111,11 @@ export async function criarTarefa(data: Omit<Task, 'id'>): Promise<Task> {
   return structuredClone(nova)
 }
 
-
+export async function atualizarTarefa(id: string, data: Partial<Task>): Promise<Task> {
+  await delay()
+  const atual = _tasks.find((t) => t.id === id)
+  if (!atual) throw new Error(`Tarefa ${id} não encontrada`)
+  const atualizada = { ...atual, ...data }
+  _tasks = _tasks.map((t) => (t.id === id ? atualizada : t))
+  return structuredClone(atualizada)
+}

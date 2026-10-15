@@ -1,5 +1,5 @@
-import { c } from '../core/theme'
-import type { Project } from '../core/types'
+import { c } from '../theme'
+import type { Project } from '../types'
 
 interface Props {
   project: Project
@@ -25,5 +25,3 @@ export default function ProjectPickerRow({ project: p, selected, onToggle }: Pro
     </div>
   )
 }
-
-

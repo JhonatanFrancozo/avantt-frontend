@@ -1,4 +1,4 @@
-import { c } from '../../core/theme'
+import { c } from '../../theme'
 
 export const inputStyle = {
   padding: '8px 10px',
@@ -11,5 +11,3 @@ export const inputStyle = {
   outline: 'none',
   width: '100%',
 } as const
-
-

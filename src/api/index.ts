@@ -2,7 +2,11 @@ export * as projetos from './projetos'
 export * as tarefas from './tarefas'
 export * as sprints from './sprints'
 export * as usuarios from './usuarios'
+export * as auth from './auth'
+export * as organizacoes from './organizacoes'
+export * as clientes from './clientes'
+export * as catalogos from './catalogos'
+export * as metricas from './metricas'
+export * as estimativas from './estimativas'
 export { IS_MOCK } from './client'
-
-
-
+export { getApiErrorMessage } from './client'

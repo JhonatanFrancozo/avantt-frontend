@@ -3,10 +3,10 @@ import Modal from '../components/Modal'
 import { Field, Inp, Sel, ColorPicker } from '../components/form'
 import { Avatar } from '../components/atoms'
 import ProjectPickerRow from '../components/ProjectPickerRow'
-import { c } from '../core/theme'
-import { mkInitials } from '../core/utils'
-import { MEMBER_COLORS, ROLES } from '../core/constants'
-import type { Member, Project } from '../core/types'
+import { c } from '../theme'
+import { mkInitials } from '../utils'
+import { MEMBER_COLORS, ROLES } from '../constants'
+import type { Member, Project } from '../types'
 
 interface Props {
   projects: Project[]
@@ -28,14 +28,26 @@ export default function CreateMemberModal({ projects, onClose, onSave }: Props) 
     const e: Record<string, string> = {}
     if (!name.trim()) e.name = 'Nome obrigatório'
     if (!role) e.role = 'Função obrigatória'
-    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = 'E-mail inválido'
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = 'E-mail válido obrigatório'
     setErrors(e)
     return Object.keys(e).length === 0
   }
 
   function submit() {
     if (!validate()) return
-    onSave({ name: name.trim(), email, role, avatar: av, color, projects: projList, tasks: { total: 0, done: 0, delayed: 0, blocked: 0 }, workload: 0 })
+    onSave({
+      name: name.trim(),
+      email: email.trim().toLowerCase(),
+      role,
+      avatar: av,
+      color,
+      projects: projList,
+      projectIds: projects.filter((project) => projList.includes(project.name)).map((project) => project.id),
+      tasks: { total: 0, done: 0, delayed: 0, blocked: 0 },
+      workload: 0,
+      inviteStatus: 'pending',
+      isActive: false,
+    })
   }
 
   function toggleProject(pname: string) {
@@ -58,7 +70,7 @@ export default function CreateMemberModal({ projects, onClose, onSave }: Props) 
           <Field label="Nome completo" required error={errors.name}>
             <Inp value={name} onChange={setName} placeholder="Ex: João Oliveira" />
           </Field>
-          <Field label="E-mail" error={errors.email}>
+          <Field label="E-mail" required error={errors.email}>
             <Inp type="email" value={email} onChange={setEmail} placeholder="joao@empresa.com" />
           </Field>
           <Field label="Função" required error={errors.role}>
@@ -67,6 +79,9 @@ export default function CreateMemberModal({ projects, onClose, onSave }: Props) 
           <Field label="Cor do avatar">
             <ColorPicker colors={MEMBER_COLORS} value={color} onChange={setColor} />
           </Field>
+          <div className="rounded-lg border border-blue/20 bg-blue-light p-3 text-xs leading-5 text-blue">
+            O desenvolvedor receberá um convite para definir a própria senha e entrar nesta organização.
+          </div>
         </div>
 
         <div>
@@ -88,6 +103,3 @@ export default function CreateMemberModal({ projects, onClose, onSave }: Props) 
     </Modal>
   )
 }
-
-
-

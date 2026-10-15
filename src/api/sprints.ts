@@ -5,7 +5,7 @@
  */
 import { api, IS_MOCK } from './client'
 import * as mock from './mock/db'
-import type { Sprint } from '../core/types'
+import type { Sprint } from '../types'
 
 export async function listarSprints(projetoId?: string): Promise<Sprint[]> {
   if (IS_MOCK) return mock.listarSprints(projetoId)
@@ -16,9 +16,13 @@ export async function listarSprints(projetoId?: string): Promise<Sprint[]> {
 
 export async function criarSprint(body: Omit<Sprint, 'id'>): Promise<Sprint> {
   if (IS_MOCK) return mock.criarSprint(body)
-  const { data } = await api.post<Sprint>('/sprints', body)
+  const { data } = await api.post<Sprint>('/sprints', {
+    name: body.name,
+    projectId: body.projectId,
+    startDate: body.startDate,
+    endDate: body.endDate,
+    statusId: body.statusId ?? 2,
+    team: body.teamIds ?? [],
+  })
   return data
 }
-
-
-

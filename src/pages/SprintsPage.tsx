@@ -1,19 +1,20 @@
 import { useState } from 'react'
-import { c } from '../core/theme'
+import { c } from '../theme'
 import { Avatar, BtnPrimary } from '../components/atoms'
 import ProgressBar from '../components/atoms/ProgressBar'
-import { fmtDateShort } from '../core/utils'
-import { delayColor, delayHex } from '../core/utils'
-import type { Sprint, Project, Member } from '../core/types'
+import { fmtDateShort } from '../utils'
+import { delayColor, delayHex } from '../utils'
+import type { Sprint, Project, Member } from '../types'
 
 interface Props {
   sprints: Sprint[]
   projects: Project[]
   members: Member[]
   onCreateSprint: () => void
+  canCreate?: boolean
 }
 
-export default function SprintsPage({ sprints, projects, members, onCreateSprint }: Props) {
+export default function SprintsPage({ sprints, projects, members, onCreateSprint, canCreate = true }: Props) {
   const [filterProject, setFilterProject] = useState('')
   const filtered = filterProject ? sprints.filter((s) => s.project === filterProject) : sprints
 
@@ -30,7 +31,7 @@ export default function SprintsPage({ sprints, projects, members, onCreateSprint
             )
           })}
         </div>
-        <BtnPrimary onClick={onCreateSprint}>＋ Nova Sprint</BtnPrimary>
+        {canCreate && <BtnPrimary onClick={onCreateSprint}>＋ Nova Sprint</BtnPrimary>}
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 16 }}>
@@ -110,6 +111,3 @@ export default function SprintsPage({ sprints, projects, members, onCreateSprint
     </div>
   )
 }
-
-
-

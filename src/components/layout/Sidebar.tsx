@@ -1,22 +1,31 @@
-import { c } from '../../core/theme'
-import { NAV_ITEMS } from '../../core/constants'
+import { c } from '../../theme'
+import { NAV_ITEMS } from '../../constants'
 import Avatar from '../atoms/Avatar'
-import type { Page, Project } from '../../core/types'
+import BtnPrimary from '../atoms/BtnPrimary'
+import NavIcon from '../NavIcon'
+import type { Page, Project, SessionUser } from '../../types'
 
 interface Props {
   active: Page
   onNav: (p: Page) => void
   projects: Project[]
+  onLogout: () => void
+  user?: SessionUser
+  onProfile?: () => void
 }
 
-export default function Sidebar({ active, onNav, projects }: Props) {
+export default function Sidebar({ active, onNav, projects, onLogout, user, onProfile }: Props) {
+  const navItems = user?.projectIds
+    ? NAV_ITEMS.filter((item) => item.page !== 'clients' && item.page !== 'organization')
+    : NAV_ITEMS
+
   return (
     <aside style={{ width: 220, minWidth: 220, backgroundColor: c.sidebar, display: 'flex', flexDirection: 'column', height: '100vh', position: 'sticky', top: 0, borderRight: `1px solid ${c.border}`, transition: 'background-color 0.3s' }}>
       <div style={{ padding: '24px 20px 20px', borderBottom: `1px solid ${c.border}` }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 30, height: 30, borderRadius: 8, backgroundColor: '#4B7BF5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 800, color: '#fff' }}>P</div>
+          <div style={{ width: 30, height: 30, borderRadius: 8, backgroundColor: '#4B7BF5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 800, color: '#fff' }}>A</div>
           <div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: c.textOnDark }}>ProjectOps</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: c.textOnDark }}>AVANTT</div>
             <div style={{ fontSize: 10, color: c.textOnDarkMuted, marginTop: 1 }}>Gestão de TI</div>
           </div>
         </div>
@@ -24,9 +33,9 @@ export default function Sidebar({ active, onNav, projects }: Props) {
 
       <nav style={{ padding: '12px 10px', flex: 1 }}>
         <div style={{ fontSize: 10, fontWeight: 600, color: '#4B5A73', padding: '6px 10px 8px', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Menu</div>
-        {NAV_ITEMS.map((item) => (
+        {navItems.map((item) => (
           <div key={item.page} onClick={() => onNav(item.page)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 6, cursor: 'pointer', backgroundColor: active === item.page ? c.sidebarActive : 'transparent', color: active === item.page ? c.textOnDark : c.textOnDarkMuted, fontSize: 13, fontWeight: active === item.page ? 600 : 400, marginBottom: 2 }}>
-            <span style={{ fontSize: 11, width: 16, textAlign: 'center' }}>{item.icon}</span>
+            <NavIcon name={item.icon} size={15} />
             {item.label}
             {active === item.page && <span style={{ marginLeft: 'auto', width: 3, height: 16, borderRadius: 2, backgroundColor: '#4B7BF5' }} />}
           </div>
@@ -39,20 +48,33 @@ export default function Sidebar({ active, onNav, projects }: Props) {
             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
           </div>
         ))}
+
       </nav>
 
       <div style={{ padding: '14px 16px', borderTop: `1px solid ${c.border}` }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <Avatar i="GS" color="#4B7BF5" size={32} />
-          <div>
-            <div style={{ fontSize: 12, fontWeight: 600, color: c.textOnDark }}>Gustavo Silva</div>
-            <div style={{ fontSize: 11, color: c.textOnDarkMuted }}>Gerente de Projetos</div>
-          </div>
+          <BtnPrimary variant="ghost" compact fullWidth onClick={onProfile} ariaLabel="Abrir meu perfil">
+            <span style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', minWidth: 0, padding: '4px 0', textAlign: 'left' }}>
+              <Avatar i={user?.avatar ?? 'GS'} color={user?.color ?? '#4B7BF5'} size={32} />
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ display: 'block', fontSize: 12, fontWeight: 600, color: c.textOnDark, overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.name ?? 'Gustavo Silva'}</span>
+                <span style={{ display: 'block', fontSize: 11, color: c.textOnDarkMuted }}>Gerente de Projetos</span>
+              </span>
+            </span>
+          </BtnPrimary>
+          <button
+            onClick={onLogout}
+            title="Sair"
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, borderRadius: 4, color: c.textOnDarkMuted, display: 'flex', alignItems: 'center', flexShrink: 0 }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+          </button>
         </div>
       </div>
     </aside>
   )
 }
-
-
-

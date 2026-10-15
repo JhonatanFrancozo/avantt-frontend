@@ -1,17 +1,19 @@
 import { useState } from 'react'
-import { c } from '../core/theme'
+import { c } from '../theme'
 import { Avatar, BtnPrimary } from '../components/atoms'
 import ProgressBar from '../components/atoms/ProgressBar'
-import { fmtDateShort, fmtDate, mkInitials } from '../core/utils'
-import type { Project, Member } from '../core/types'
+import { fmtDateShort, fmtDate, mkInitials } from '../utils'
+import type { Project, Member } from '../types'
+import { EmptyState } from '../components/layout'
 
 interface Props {
   projects: Project[]
   members: Member[]
   onCreateProject: () => void
+  canCreate?: boolean
 }
 
-export default function ProjectsPage({ projects, members, onCreateProject }: Props) {
+export default function ProjectsPage({ projects, members, onCreateProject, canCreate = true }: Props) {
   const [selected, setSelected] = useState<string | null>(null)
 
   return (
@@ -21,10 +23,18 @@ export default function ProjectsPage({ projects, members, onCreateProject }: Pro
           <div style={{ fontSize: 14, fontWeight: 600, color: c.textPrimary }}>{projects.length} projetos</div>
           <div style={{ fontSize: 11, color: c.textMuted, marginTop: 1 }}>Clique em um projeto para ver detalhes</div>
         </div>
-        <BtnPrimary onClick={onCreateProject}>＋ Novo Projeto</BtnPrimary>
+        {canCreate && <BtnPrimary onClick={onCreateProject}>＋ Novo Projeto</BtnPrimary>}
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(310px, 1fr))', gap: 16 }}>
+        {projects.length === 0 && (
+          <EmptyState
+            title="Nenhum projeto cadastrado"
+            description="Crie o primeiro projeto para começar a organizar sprints, tarefas e equipe."
+            actionLabel={canCreate ? 'Criar projeto' : undefined}
+            onAction={canCreate ? onCreateProject : undefined}
+          />
+        )}
         {projects.map((p) => {
           const isSel = selected === p.id
           return (
@@ -32,6 +42,7 @@ export default function ProjectsPage({ projects, members, onCreateProject }: Pro
               <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, backgroundColor: p.color }} />
               <div style={{ marginTop: 4 }}>
                 <div style={{ fontSize: 14, fontWeight: 700, color: c.textPrimary }}>{p.name}</div>
+                {p.clientName && <div style={{ fontSize: 10, color: p.color, marginTop: 3, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{p.clientName}</div>}
                 <div style={{ fontSize: 11, color: c.textMuted, marginTop: 3, lineHeight: 1.5 }}>{p.description || 'Sem descrição'}</div>
               </div>
 
@@ -130,6 +141,3 @@ export default function ProjectsPage({ projects, members, onCreateProject }: Pro
     </div>
   )
 }
-
-
-
