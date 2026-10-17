@@ -20,7 +20,9 @@ function normalizeMember(user: Record<string, unknown>): Member {
     avatar: String(user.avatar ?? name.split(' ').slice(0, 2).map((part) => part[0]).join('').toUpperCase()),
     color: String(user.color ?? '#4B7BF5'),
     projects: Array.isArray(user.projects) ? user.projects.map(String) : [],
-    projectIds: Array.isArray(user.projectIds) ? user.projectIds.map(String) : [],
+    projectIds: Array.isArray(user.projectIds)
+      ? user.projectIds.map(String)
+      : [],
     tasks: typeof user.tasks === 'object' && user.tasks
       ? user.tasks as Member['tasks']
       : { total: 0, done: 0, delayed: 0, blocked: 0 },
@@ -67,7 +69,7 @@ export async function atualizarUsuario(id: string, body: Partial<Member>): Promi
     phone: body.phone || undefined,
     cargo: body.role,
     active: body.isActive,
-    projectIds: body.projectIds,
+    projectIds: body.projectIds?.map((projectId) => Number(projectId)),
   }
   const { data } = await api.patch<Record<string, unknown>>(`/usuarios/${id}`, request)
   return normalizeMember(data)

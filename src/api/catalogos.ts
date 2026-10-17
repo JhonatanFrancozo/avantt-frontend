@@ -42,6 +42,15 @@ export async function listarTags(): Promise<CatalogItem[]> {
   return data
 }
 
+export async function criarTag(nome: string): Promise<CatalogItem> {
+  if (IS_MOCK) {
+    const normalized = nome.trim()
+    return { id: Date.now(), nome: normalized }
+  }
+  const { data } = await api.post<CatalogItem>('/tags', { nome: nome.trim() })
+  return data
+}
+
 export async function listarTagsDaTarefa(tarefaId: string | number): Promise<number[]> {
   if (IS_MOCK) return []
   const { data } = await api.get<number[]>(`/tarefas/${tarefaId}/tags`)

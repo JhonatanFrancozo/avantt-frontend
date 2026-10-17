@@ -66,7 +66,6 @@ export default function CreateTaskModal({ projects, tasks: _tasks, members, spri
     const e: Record<string, string> = {}
     if (!title.trim()) e.title = 'Título obrigatório'
     if (!project) e.project = 'Projeto obrigatório'
-    if (!sprint.trim()) e.sprint = 'Sprint obrigatória'
     if (!assignee) e.assignee = 'Responsável obrigatório'
     if (!plannedEnd) e.plannedEnd = 'Data obrigatória'
     setErrors(e)
@@ -108,13 +107,18 @@ export default function CreateTaskModal({ projects, tasks: _tasks, members, spri
     })
   }
 
-  function addTag() {
+  async function addTag() {
     const t = tagInput.trim().toLowerCase()
-    const catalogTag = tagCatalog.find((item) => item.nome.toLowerCase() === t)
-    if (catalogTag && !tags.includes(t)) {
-      setTags((current) => [...current, t])
+    if (!t || tags.includes(t)) return
+    try {
+      const catalogTag = tagCatalog.find((item) => item.nome.toLowerCase() === t)
+        ?? await api.catalogos.criarTag(t)
+      setTagCatalog((current) => current.some((item) => item.id === catalogTag.id) ? current : [...current, catalogTag])
+      setTags((current) => [...current, catalogTag.nome.toLowerCase()])
       setTagIds((current) => [...current, catalogTag.id])
       setTagInput('')
+    } catch {
+      setErrors((current) => ({ ...current, tag: 'Não foi possível criar a tag' }))
     }
   }
 
@@ -188,7 +192,7 @@ export default function CreateTaskModal({ projects, tasks: _tasks, members, spri
           <Field label="Tags">
             <div style={{ display: 'flex', gap: 6 }}>
               <input value={tagInput} onChange={(e) => setTagInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addTag() } }} placeholder="backend, QA… Enter" style={{ ...inputStyle, flex: 1 }} />
-              <button onClick={addTag} style={{ padding: '8px 12px', borderRadius: 7, border: `1px solid ${c.border}`, backgroundColor: c.bg, color: c.textSecondary, cursor: 'pointer', fontFamily: 'var(--font-sans)' }}>+</button>
+              <button type="button" onClick={() => void addTag()} style={{ padding: '8px 12px', borderRadius: 7, border: `1px solid ${c.border}`, backgroundColor: c.bg, color: c.textSecondary, cursor: 'pointer', fontFamily: 'var(--font-sans)' }}>+</button>
             </div>
             {tags.length > 0 && (
               <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginTop: 6 }}>

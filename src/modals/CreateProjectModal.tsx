@@ -13,17 +13,18 @@ interface Props {
   members: Member[]
   onClose: () => void
   onSave: (p: Omit<Project, 'id'>) => void
+  initial?: Project
 }
 
-export default function CreateProjectModal({ members, onClose, onSave }: Props) {
-  const [name, setName] = useState('')
-  const [description, setDescription] = useState('')
-  const [clientId, setClientId] = useState('')
+export default function CreateProjectModal({ members, onClose, onSave, initial }: Props) {
+  const [name, setName] = useState(initial?.name ?? '')
+  const [description, setDescription] = useState(initial?.description ?? '')
+  const [clientId, setClientId] = useState(initial?.clientId ? String(initial.clientId) : '')
   const [clients, setClients] = useState<Client[]>([])
-  const [color, setColor] = useState(PROJ_PALETTE[0])
-  const [startDate, setStartDate] = useState('')
-  const [endDate, setEndDate] = useState('')
-  const [team, setTeam] = useState<string[]>([])
+  const [color, setColor] = useState(initial?.color ?? PROJ_PALETTE[0])
+  const [startDate, setStartDate] = useState(initial?.startDate ?? '')
+  const [endDate, setEndDate] = useState(initial?.endDate ?? '')
+  const [team, setTeam] = useState<string[]>(initial?.team ?? [])
   const [risk, setRisk] = useState('')
   const [risks, setRisks] = useState<string[]>([])
   const [milestone, setMilestone] = useState('')
@@ -71,7 +72,7 @@ export default function CreateProjectModal({ members, onClose, onSave }: Props) 
   }
 
   return (
-    <Modal title="Novo Projeto" onClose={onClose} onSubmit={submit} submitLabel="Criar Projeto" wide>
+    <Modal title={initial ? 'Editar Projeto' : 'Novo Projeto'} onClose={onClose} onSubmit={submit} submitLabel={initial ? 'Salvar alterações' : 'Criar Projeto'} wide>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <Field label="Nome do projeto" required error={errors.name}>

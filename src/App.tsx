@@ -3,6 +3,7 @@ import { useTheme } from './theme'
 import MarketingPage from './pages/MarketingPage'
 import AuthPage from './pages/AuthPage'
 import AccessPendingPage from './pages/AccessPendingPage'
+import InvitationPage from './pages/InvitationPage'
 import DashboardApp from './DashboardApp'
 import DevDashboardApp from './DevDashboardApp'
 import * as api from './api'
@@ -13,7 +14,8 @@ type AuthMode = 'login' | 'signup'
 
 export default function App() {
   const [session, setSession] = useState<AuthSession | null>(() => api.auth.loadSession())
-  const [view, setView] = useState<AppView>(() => session ? 'dashboard' : 'marketing')
+  const invitationToken = new URLSearchParams(window.location.search).get('token')
+  const [view, setView] = useState<AppView>(() => invitationToken ? 'invitation' : session ? 'dashboard' : 'marketing')
   const [authMode, setAuthMode] = useState<AuthMode>('login')
   const { dark, toggle } = useTheme()
 
@@ -62,6 +64,20 @@ export default function App() {
           onLinked={(linkedSession) => {
             api.auth.saveSession(linkedSession, true)
             setSession(linkedSession)
+          }}
+        />
+      )
+    }
+
+    if (view === 'invitation' && invitationToken) {
+      return (
+        <InvitationPage
+          token={invitationToken}
+          onAccepted={(nextSession) => {
+            api.auth.saveSession(nextSession, true)
+            setSession(nextSession)
+            window.history.replaceState({}, '', '/')
+            setView('dashboard')
           }}
         />
       )

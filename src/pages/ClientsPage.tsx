@@ -7,7 +7,6 @@ import { DataState, EmptyState } from '../components/layout'
 import Modal from '../components/Modal'
 import type { Client } from '../types'
 import type { Project } from '../types'
-import ProjectPickerRow from '../components/ProjectPickerRow'
 
 const emptyClient: ClientInput = {
   name: '',
@@ -21,6 +20,20 @@ const emptyClient: ClientInput = {
     role: 'manager',
     projectIds: [],
   },
+}
+
+function formatDocument(value: string) {
+  const digits = value.replace(/\D/g, '').slice(0, 14)
+  if (digits.length <= 11) {
+    return digits.replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2')
+  }
+  return digits.replace(/^(\d{2})(\d)/, '$1.$2').replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3').replace(/\.(\d{3})(\d)/, '.$1/$2').replace(/(\d{4})(\d)/, '$1-$2')
+}
+
+function formatPhone(value: string) {
+  const digits = value.replace(/\D/g, '').slice(0, 11)
+  if (digits.length <= 10) return digits.replace(/^(\d{2})(\d)/, '($1) $2').replace(/(\d{4})(\d)/, '$1-$2')
+  return digits.replace(/^(\d{2})(\d)/, '($1) $2').replace(/(\d{5})(\d)/, '$1-$2')
 }
 
 function ClientModal({
@@ -39,7 +52,13 @@ function ClientModal({
     document: client.document,
     email: client.email,
     phone: client.phone,
-    defaultUser: client.defaultUser,
+    defaultUser: client.defaultUser ?? {
+      name: '',
+      email: client.email,
+      status: 'invite-pending',
+      role: 'manager',
+      projectIds: [],
+    },
   } : emptyClient)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -61,13 +80,8 @@ function ClientModal({
       setError('Informe o nome do cliente.')
       return
     }
-    const hasManagerData = Boolean(form.defaultUser?.name || form.defaultUser?.email)
-    if (hasManagerData && !form.defaultUser?.name.trim()) {
-      setError('Informe o nome do gestor.')
-      return
-    }
-    if (hasManagerData && !form.defaultUser?.email.trim()) {
-      setError('Informe o e-mail do gestor.')
+    if (!form.defaultUser?.email.trim()) {
+      setError('Informe o e-mail do gestor da empresa cliente.')
       return
     }
     if (form.defaultUser?.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.defaultUser.email)) {
@@ -79,6 +93,7 @@ function ClientModal({
     try {
       await onSave({
         ...form,
+        email: form.defaultUser.email,
         defaultUser: form.defaultUser?.email ? {
           ...form.defaultUser,
           role: 'manager',
@@ -107,44 +122,23 @@ function ClientModal({
             <Inp value={form.name} onChange={(value) => update('name', value)} placeholder="Nome da empresa cliente" />
           </Field>
           <Field label="CNPJ ou documento">
-            <Inp value={form.document} onChange={(value) => update('document', value)} />
+            <Inp value={form.document} onChange={(value) => update('document', formatDocument(value))} placeholder="00.000.000/0000-00" />
           </Field>
-          <Field label="E-mail">
-            <Inp type="email" value={form.email} onChange={(value) => update('email', value)} />
+          <Field label="E-mail do gestor para convite" required>
+            <Inp type="email" value={form.defaultUser?.email ?? ''} onChange={(value) => updateUser('email', value)} placeholder="gestor@empresa.com" />
           </Field>
           <Field label="Telefone">
-            <Inp value={form.phone} onChange={(value) => update('phone', value)} />
+            <Inp value={form.phone} onChange={(value) => update('phone', formatPhone(value))} placeholder="(00) 00000-0000" />
           </Field>
         </div>
         <div className="space-y-4 rounded-xl border border-border bg-bg p-5">
           <div>
-            <div className="text-sm font-semibold text-text-primary">Usuário gestor</div>
-            <p className="mt-1 text-xs leading-5 text-text-muted">Este usuário terá o mesmo perfil gestor utilizado no restante da plataforma.</p>
+            <div className="text-sm font-semibold text-text-primary">Convite do gestor</div>
+            <p className="mt-1 text-xs leading-5 text-text-muted">O gestor preencherá os próprios dados e definirá a senha pelo link enviado ao e-mail informado.</p>
           </div>
-          <Field label="Nome do contato">
-            <Inp value={form.defaultUser?.name ?? ''} onChange={(value) => updateUser('name', value)} />
-          </Field>
-          <Field label="E-mail do contato">
-            <Inp type="email" value={form.defaultUser?.email ?? ''} onChange={(value) => updateUser('email', value)} />
-          </Field>
           <div className="rounded-lg border border-blue/20 bg-blue-light p-3 text-xs leading-5 text-blue">
-            O gestor receberá um convite para definir a própria senha.
+            O acesso será limitado à empresa cliente e o convite ficará pendente até a aceitação.
           </div>
-          <Field label="Projetos permitidos">
-            <div className="max-h-44 space-y-2 overflow-y-auto">
-              {projects.map((project) => (
-                <ProjectPickerRow
-                  key={project.id}
-                  project={project}
-                  selected={projectIds.includes(project.id)}
-                  onToggle={() => setProjectIds((current) => current.includes(project.id)
-                    ? current.filter((id) => id !== project.id)
-                    : [...current, project.id])}
-                />
-              ))}
-              {projects.length === 0 && <div className="text-xs text-text-muted">Nenhum projeto disponível.</div>}
-            </div>
-          </Field>
         </div>
       </div>
       {error && <div role="alert" className="mt-5 rounded-lg bg-red-light p-3 text-sm text-red">{error}</div>}

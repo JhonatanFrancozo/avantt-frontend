@@ -3,7 +3,6 @@ import { c } from '../theme'
 import { Avatar, BtnPrimary, StatCard } from '../components/atoms'
 import ProgressBar from '../components/atoms/ProgressBar'
 import { workloadColor } from '../utils'
-import EditMemberProjectsModal from '../modals/EditMemberProjectsModal'
 import type { Member, Project } from '../types'
 import { EmptyState } from '../components/layout'
 
@@ -11,14 +10,12 @@ interface Props {
   members: Member[]
   projects: Project[]
   onAddMember: () => void
-  onUpdateMember: (m: Member) => void
   canManage?: boolean
 }
 
-export default function TeamPage({ members, projects, onAddMember, onUpdateMember, canManage = true }: Props) {
+export default function TeamPage({ members, projects, onAddMember, canManage = true }: Props) {
   const [filterProject, setFilterProject] = useState('')
   const [filterRole, setFilterRole] = useState('')
-  const [editingMember, setEditingMember] = useState<Member | null>(null)
 
   const roles = useMemo(() => [...new Set(members.map((m) => m.role))].sort(), [members])
 
@@ -126,24 +123,10 @@ export default function TeamPage({ members, projects, onAddMember, onUpdateMembe
                 })}
               </div>
 
-              {canManage && (
-                <button onClick={() => setEditingMember(m)} style={{ padding: '6px 0', borderRadius: 7, border: `1px solid ${c.border}`, backgroundColor: 'transparent', color: c.textSecondary, fontSize: 12, cursor: 'pointer', fontFamily: 'var(--font-sans)', width: '100%' }}>
-                  Editar projetos atribuídos
-                </button>
-              )}
             </div>
           </div>
         ))}
       </div>
-
-      {editingMember && (
-        <EditMemberProjectsModal
-          member={editingMember}
-          projects={projects}
-          onClose={() => setEditingMember(null)}
-          onSave={(updated) => { onUpdateMember(updated); setEditingMember(null) }}
-        />
-      )}
     </div>
   )
 }

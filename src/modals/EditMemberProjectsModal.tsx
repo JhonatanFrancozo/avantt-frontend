@@ -25,7 +25,9 @@ export default function EditMemberProjectsModal({ member, projects, onClose, onS
       onSubmit={() => onSave({
         ...member,
         projects: projList,
-        projectIds: projects.filter((project) => projList.includes(project.name)).map((project) => project.id),
+        projectIds: projects
+          .filter((project) => projList.includes(project.name))
+          .map((project) => Number(project.id)),
       })}
       submitLabel="Salvar"
     >

@@ -23,6 +23,7 @@ export default function DashboardApp({
   const [page, setPage] = useState<Page>('overview')
   const { projects, tasks, sprints, members, setData, loading, error, reload } = useWorkspaceData()
   const [activeModal, setActiveModal] = useState<ActiveModal>(null)
+  const [editingProject, setEditingProject] = useState<Project | null>(null)
   const [profileOpen, setProfileOpen] = useState(false)
   const scopedProjectIds = user?.projectIds
   const visibleProjects = useMemo(
@@ -53,8 +54,14 @@ export default function DashboardApp({
   function closeModal() { setActiveModal(null) }
 
   async function saveProject(body: Omit<Project, 'id'>) {
-    const created = await api.projetos.criarProjeto(body)
-    setData((current) => ({ ...current, projects: [...current.projects, created] }))
+    if (editingProject) {
+      const saved = await api.projetos.atualizarProjeto(editingProject.id, body)
+      setData((current) => ({ ...current, projects: current.projects.map((project) => project.id === saved.id ? saved : project) }))
+    } else {
+      const created = await api.projetos.criarProjeto(body)
+      setData((current) => ({ ...current, projects: [...current.projects, created] }))
+    }
+    setEditingProject(null)
     closeModal()
   }
 
@@ -75,16 +82,6 @@ export default function DashboardApp({
     const refreshedProjects = await api.projetos.listarProjetos()
     setData((current) => ({ ...current, members: [...current.members, created], projects: refreshedProjects }))
     closeModal()
-  }
-
-  async function updateMember(updated: Member) {
-    const saved = await api.usuarios.atualizarUsuario(updated.id, updated)
-    const refreshedProjects = await api.projetos.listarProjetos()
-    setData((current) => ({
-      ...current,
-      members: current.members.map((member) => (member.id === saved.id ? saved : member)),
-      projects: refreshedProjects,
-    }))
   }
 
   const pageTitle: Record<Page, string> = {
@@ -112,16 +109,16 @@ export default function DashboardApp({
         </PageHeader>
         <div style={{ flex: 1, overflowY: 'auto' }}>
           {page === 'overview' && <OverviewPage tasks={visibleTasks} sprints={visibleSprints} members={visibleMembers} />}
-          {page === 'projects' && <ProjectsPage projects={visibleProjects} members={visibleMembers} onCreateProject={() => setActiveModal('project')} canCreate={canManageWorkspace} />}
+          {page === 'projects' && <ProjectsPage projects={visibleProjects} members={visibleMembers} onCreateProject={() => { setEditingProject(null); setActiveModal('project') }} onEditProject={(project) => { setEditingProject(project); setActiveModal('project') }} canCreate={canManageWorkspace} />}
           {page === 'sprints' && <SprintsPage sprints={visibleSprints} projects={visibleProjects} members={visibleMembers} onCreateSprint={() => setActiveModal('sprint')} canCreate={canManageWorkspace} />}
           {page === 'backlog' && <BacklogPage tasks={visibleTasks} projects={visibleProjects} members={visibleMembers} onCreateTask={() => setActiveModal('task')} canCreate={canManageWorkspace} />}
-          {page === 'team' && <TeamPage members={visibleMembers} projects={visibleProjects} onAddMember={() => setActiveModal('member')} onUpdateMember={updateMember} canManage={canManageWorkspace} />}
+          {page === 'team' && <TeamPage members={visibleMembers} projects={visibleProjects} onAddMember={() => setActiveModal('member')} canManage={canManageWorkspace} />}
           {page === 'clients' && <ClientsPage projects={projects} />}
           {page === 'organization' && <OrganizationPage />}
           {page === 'reports' && <ReportsPage tasks={visibleTasks} projects={visibleProjects} members={visibleMembers} sprints={visibleSprints} />}
         </div>
       </main>
-      {activeModal === 'project' && <CreateProjectModal members={members} onClose={closeModal} onSave={saveProject} />}
+      {activeModal === 'project' && <CreateProjectModal members={members} initial={editingProject ?? undefined} onClose={() => { setEditingProject(null); closeModal() }} onSave={saveProject} />}
       {activeModal === 'task' && <CreateTaskModal projects={projects} tasks={tasks} members={members} sprints={sprints} onClose={closeModal} onSave={saveTask} />}
       {activeModal === 'sprint' && <CreateSprintModal projects={projects} members={members} onClose={closeModal} onSave={saveSprint} />}
       {activeModal === 'member' && <CreateMemberModal projects={projects} onClose={closeModal} onSave={saveMember} />}

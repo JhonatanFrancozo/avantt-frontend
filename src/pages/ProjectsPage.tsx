@@ -11,9 +11,10 @@ interface Props {
   members: Member[]
   onCreateProject: () => void
   canCreate?: boolean
+  onEditProject?: (project: Project) => void
 }
 
-export default function ProjectsPage({ projects, members, onCreateProject, canCreate = true }: Props) {
+export default function ProjectsPage({ projects, members, onCreateProject, canCreate = true, onEditProject }: Props) {
   const [selected, setSelected] = useState<string | null>(null)
 
   return (
@@ -80,6 +81,7 @@ export default function ProjectsPage({ projects, members, onCreateProject, canCr
               </div>
 
               <div style={{ fontSize: 11, color: p.color, fontWeight: 500 }}>{isSel ? '▲ Ocultar' : '▼ Ver detalhes'}</div>
+                {isSel && onEditProject && <button onClick={(event) => { event.stopPropagation(); onEditProject(p) }} style={{ alignSelf: 'flex-start', border: `1px solid ${c.border}`, background: c.bg, color: c.textSecondary, borderRadius: 6, padding: '6px 10px', fontSize: 11, cursor: 'pointer' }}>Editar projeto</button>}
             </div>
           )
         })}

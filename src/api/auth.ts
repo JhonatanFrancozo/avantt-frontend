@@ -45,18 +45,36 @@ export async function login(payload: LoginPayload): Promise<AuthSession> {
   return normalizeSession(data)
 }
 
+export async function acceptInvitation(payload: { token: string; name: string; password: string }): Promise<AuthSession> {
+  if (IS_MOCK) throw new Error('Aceitação de convite exige o backend real.')
+  const { data } = await api.post<AuthSession>('/auth/convite/aceitar', payload)
+  return normalizeSession(data)
+}
+
 export async function signup(payload: SignupPayload): Promise<AuthSession> {
   if (IS_MOCK) return mockSession({
     ...payload,
     role: payload.accountType === 'organization' ? 'manager' : 'developer',
     linked: payload.accountType === 'organization',
   })
-  const { data } = await api.post<AuthSession>('/auth/register', {
-    name: payload.name,
-    email: payload.email,
-    password: payload.password,
-    role: payload.accountType === 'organization' ? 'Admin' : 'Colaborador',
-  })
+  const endpoint = payload.accountType === 'organization'
+    ? '/auth/register-organizacao'
+    : '/auth/register'
+  const request = payload.accountType === 'organization'
+    ? {
+        name: payload.name,
+        email: payload.email,
+        password: payload.password,
+        organizationName: payload.organizationName,
+        cnpj: payload.cnpj,
+      }
+    : {
+        name: payload.name,
+        email: payload.email,
+        password: payload.password,
+        role: 'Colaborador',
+      }
+  const { data } = await api.post<AuthSession>(endpoint, request)
   return normalizeSession(data)
 }
 

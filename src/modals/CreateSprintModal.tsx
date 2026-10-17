@@ -44,7 +44,7 @@ export default function CreateSprintModal({ projects, members, onClose, onSave }
       name: name.trim(),
       project,
       projectId: selectedProject ? Number(String(selectedProject.id).replace(/\D/g, '')) : undefined,
-      statusId: 2,
+      statusId: undefined,
       startDate,
       endDate,
       daysDelayed: 0,
