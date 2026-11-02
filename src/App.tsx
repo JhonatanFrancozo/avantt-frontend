@@ -53,22 +53,6 @@ export default function App() {
   }, [])
 
   if (view === 'dashboard') {
-    if (session?.user.role === 'developer' && !session.user.organizationId) {
-      return (
-        <AccessPendingPage
-          user={session.user}
-          dark={dark}
-          onToggleTheme={toggle}
-          onLogout={logout}
-          onUserUpdate={updateUser}
-          onLinked={(linkedSession) => {
-            api.auth.saveSession(linkedSession, true)
-            setSession(linkedSession)
-          }}
-        />
-      )
-    }
-
     if (view === 'invitation' && invitationToken) {
       return (
         <InvitationPage
