@@ -54,7 +54,7 @@ function mockMetrics(projectId: string | number): ProjectMetrics {
   const project = INIT_PROJECTS.find((item) => String(item.id) === String(projectId))
     ?? INIT_PROJECTS.find((item) => item.id.replace(/\D/g, '') === String(projectId))
   const tasks = project ? INIT_TASKS.filter((task) => task.project === project.name) : []
-  const completed = tasks.filter((task) => task.status === 'Concluída').length
+  const completed = tasks.filter((task) => task.status === 'concluída').length
   const statusNames = ['Planejada', 'Em andamento', 'Concluída', 'Bloqueada']
 
   return {

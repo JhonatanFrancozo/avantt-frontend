@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react'
 import { useTheme } from './theme'
 import MarketingPage from './pages/MarketingPage'
@@ -8,15 +9,30 @@ import DashboardApp from './DashboardApp'
 import DevDashboardApp from './DevDashboardApp'
 import * as api from './api'
 import type { AuthSession, LoginPayload, SignupPayload } from './types'
+import { TesteStatus } from './components/TesteStatus'
 
-type AppView = 'marketing' | 'auth' | 'dashboard'
+type AppView = 'marketing' | 'auth' | 'dashboard' | 'invitation' | 'status'
 type AuthMode = 'login' | 'signup'
 
 export default function App() {
   const [session, setSession] = useState<AuthSession | null>(() => api.auth.loadSession())
+
   const invitationToken = new URLSearchParams(window.location.search).get('token')
-  const [view, setView] = useState<AppView>(() => invitationToken ? 'invitation' : session ? 'dashboard' : 'marketing')
+
+  const testarStatus = new URLSearchParams(window.location.search).get('teste') === 'status'
+
+  const [view, setView] = useState<AppView>(() =>
+    testarStatus
+      ? 'status'
+      : invitationToken
+        ? 'invitation'
+        : session
+          ? 'dashboard'
+          : 'marketing'
+  )
+
   const [authMode, setAuthMode] = useState<AuthMode>('login')
+
   const { dark, toggle } = useTheme()
 
   function openAuth(mode: AuthMode) {
@@ -28,7 +44,9 @@ export default function App() {
     const nextSession = mode === 'login'
       ? await api.auth.login(payload as LoginPayload)
       : await api.auth.signup(payload as SignupPayload)
+
     const remember = mode === 'login' ? (payload as LoginPayload).remember : true
+
     api.auth.saveSession(nextSession, remember)
     setSession(nextSession)
     setView('dashboard')
@@ -42,33 +60,50 @@ export default function App() {
 
   function updateUser(user: AuthSession['user']) {
     if (!session) return
+
     const updatedSession = { ...session, user }
+
     api.auth.saveSession(updatedSession, true)
     setSession(updatedSession)
   }
 
   useEffect(() => {
     window.addEventListener('avantt:unauthorized', logout)
+
     return () => window.removeEventListener('avantt:unauthorized', logout)
   }, [])
 
+  // Tela temporária para testar a integração com o backend
+  if (view === 'status') {
+    return <TesteStatus />
+  }
+
+  if (view === 'invitation' && invitationToken) {
+    return (
+      <InvitationPage
+        token={invitationToken}
+        onAccepted={(nextSession) => {
+          api.auth.saveSession(nextSession, true)
+          setSession(nextSession)
+          window.history.replaceState({}, '', '/')
+          setView('dashboard')
+        }}
+      />
+    )
+  }
+
   if (view === 'dashboard') {
-    if (view === 'invitation' && invitationToken) {
-      return (
-        <InvitationPage
-          token={invitationToken}
-          onAccepted={(nextSession) => {
-            api.auth.saveSession(nextSession, true)
-            setSession(nextSession)
-            window.history.replaceState({}, '', '/')
-            setView('dashboard')
-          }}
-        />
-      )
-    }
     return session?.user.role === 'developer'
-      ? <DevDashboardApp user={session.user} onLogout={logout} onUserUpdate={updateUser} />
-      : <DashboardApp user={session?.user} onLogout={logout} onUserUpdate={updateUser} />
+      ? <DevDashboardApp
+          user={session.user}
+          onLogout={logout}
+          onUserUpdate={updateUser}
+        />
+      : <DashboardApp
+          user={session?.user}
+          onLogout={logout}
+          onUserUpdate={updateUser}
+        />
   }
 
   if (view === 'auth') {

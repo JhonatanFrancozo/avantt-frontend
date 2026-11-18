@@ -1,8 +1,33 @@
-export type TaskStatus = 'Planejada' | 'Em andamento' | 'Concluída' | 'Bloqueada'
+
+export type TaskStatus =
+  | 'planejada'
+  | 'em andamento'
+  | 'revisão'
+  | 'bloqueada'
+  | 'concluída'
+  | 'cancelada'
+
 export type TaskPriority = 'crítica' | 'alta' | 'média' | 'baixa'
 export type TaskType = 'Feature' | 'Bug' | 'Melhoria' | 'Infra'
-export type Page = 'overview' | 'projects' | 'sprints' | 'backlog' | 'team' | 'clients' | 'organization' | 'reports'
-export type DevPage = 'devoverview' | 'mytasks' | 'devsprints' | 'devprojects' | 'devbacklog' | 'devreports'
+
+export type Page =
+  | 'overview'
+  | 'projects'
+  | 'sprints'
+  | 'backlog'
+  | 'team'
+  | 'clients'
+  | 'organization'
+  | 'reports'
+
+export type DevPage =
+  | 'devoverview'
+  | 'mytasks'
+  | 'devsprints'
+  | 'devprojects'
+  | 'devbacklog'
+  | 'devreports'
+
 export type ActiveModal = 'project' | 'task' | 'sprint' | 'member' | null
 export type AppRole = 'manager' | 'developer'
 
@@ -122,7 +147,12 @@ export interface Member {
   avatar: string
   color: string
   role: string
-  tasks: { total: number; done: number; delayed: number; blocked: number }
+  tasks: {
+    total: number
+    done: number
+    delayed: number
+    blocked: number
+  }
   projects: string[]
   projectIds?: string[]
   workload: number
@@ -146,10 +176,19 @@ export interface CreateUserRequest {
   projeto_ids: string[]
 }
 
-export type UpdateUserRequest = Partial<Pick<
-  CreateUserRequest,
-  'nome' | 'email' | 'cpf' | 'telefone' | 'cargo' | 'papel' | 'is_ativo' | 'projeto_ids'
->>
+export type UpdateUserRequest = Partial<
+  Pick<
+    CreateUserRequest,
+    | 'nome'
+    | 'email'
+    | 'cpf'
+    | 'telefone'
+    | 'cargo'
+    | 'papel'
+    | 'is_ativo'
+    | 'projeto_ids'
+  >
+>
 
 export interface Project {
   id: string
@@ -162,10 +201,25 @@ export interface Project {
   startDate: string
   endDate: string
   progress: number
-  sprints: { total: number; done: number; active: number; delayed: number }
-  tasks: { total: number; done: number; delayed: number; blocked: number; cancelled: number }
+  sprints: {
+    total: number
+    done: number
+    active: number
+    delayed: number
+  }
+  tasks: {
+    total: number
+    done: number
+    delayed: number
+    blocked: number
+    cancelled: number
+  }
   team: string[]
   teamIds?: number[]
   risks: string[]
-  milestones: { name: string; date: string; done: boolean }[]
+  milestones: {
+    name: string
+    date: string
+    done: boolean
+  }[]
 }

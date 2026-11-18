@@ -1,25 +1,59 @@
+
 import { api, IS_MOCK } from './client'
 import type { AuthSession, LoginPayload, SignupPayload } from '../types'
 
 const SESSION_KEY = 'avantt.session'
 
 function normalizeSession(session: AuthSession): AuthSession {
-  const role = String(session.user.role).toLowerCase()
+  const rawUser = session.user as AuthSession['user'] & {
+    organizacaoId?: number | string | null
+  }
+
+  const role = String(rawUser.role).toLowerCase()
+
+  const organizationIdRaw =
+    rawUser.organizationId ?? rawUser.organizacaoId
+
+  const organizationId =
+    organizationIdRaw != null && organizationIdRaw !== ''
+      ? Number(organizationIdRaw)
+      : undefined
+
   return {
     ...session,
     user: {
-      ...session.user,
-      role: role.includes('desenvol') || role.includes('developer') || role.includes('colaborador')
-        ? 'developer'
-        : 'manager',
+      ...rawUser,
+      organizationId:
+        organizationId !== undefined && Number.isFinite(organizationId)
+          ? organizationId
+          : undefined,
+      role:
+        role.includes('desenvolv') ||
+        role.includes('developer') ||
+        role.includes('colaborador')
+          ? 'developer'
+          : 'manager',
     },
   }
 }
 
-function mockSession(payload: { email: string; name?: string; role?: 'manager' | 'developer'; linked?: boolean }): AuthSession {
-  const isDeveloper = payload.role === 'developer' || payload.email.toLowerCase().includes('dev')
-  const isScopedManager = !isDeveloper && payload.email.toLowerCase().includes('cliente')
-  const hasOrganization = !isDeveloper || payload.linked !== false
+function mockSession(payload: {
+  email: string
+  name?: string
+  role?: 'manager' | 'developer'
+  linked?: boolean
+}): AuthSession {
+  const isDeveloper =
+    payload.role === 'developer' ||
+    payload.email.toLowerCase().includes('dev')
+
+  const isScopedManager =
+    !isDeveloper &&
+    payload.email.toLowerCase().includes('cliente')
+
+  const hasOrganization =
+    !isDeveloper || payload.linked !== false
+
   return {
     token: `mock-${Date.now()}`,
     user: {
@@ -36,53 +70,87 @@ function mockSession(payload: { email: string; name?: string; role?: 'manager' |
   }
 }
 
-export async function login(payload: LoginPayload): Promise<AuthSession> {
+export async function login(
+  payload: LoginPayload
+): Promise<AuthSession> {
   if (IS_MOCK) return mockSession(payload)
+
   const { data } = await api.post<AuthSession>('/auth/login', {
     email: payload.email,
     password: payload.password,
   })
+
   return normalizeSession(data)
 }
 
-export async function acceptInvitation(payload: { token: string; name: string; password: string }): Promise<AuthSession> {
-  if (IS_MOCK) throw new Error('Aceitação de convite exige o backend real.')
-  const { data } = await api.post<AuthSession>('/auth/convite/aceitar', payload)
+export async function acceptInvitation(payload: {
+  token: string
+  name: string
+  password: string
+}): Promise<AuthSession> {
+  if (IS_MOCK) {
+    throw new Error('Aceitação de convite exige o backend real.')
+  }
+
+  const { data } = await api.post<AuthSession>(
+    '/auth/convite/aceitar',
+    payload
+  )
+
   return normalizeSession(data)
 }
 
-export async function signup(payload: SignupPayload): Promise<AuthSession> {
-  if (IS_MOCK) return mockSession({
-    ...payload,
-    role: payload.accountType === 'organization' ? 'manager' : 'developer',
-    linked: payload.accountType === 'organization',
-  })
-  const endpoint = payload.accountType === 'organization'
-    ? '/auth/register-organizacao'
-    : '/auth/register'
-  const request = payload.accountType === 'organization'
-    ? {
-        name: payload.name,
-        email: payload.email,
-        password: payload.password,
-        organizationName: payload.organizationName,
-        cnpj: payload.cnpj,
-      }
-    : {
-        name: payload.name,
-        email: payload.email,
-        password: payload.password,
-        role: 'Colaborador',
-      }
+export async function signup(
+  payload: SignupPayload
+): Promise<AuthSession> {
+  if (IS_MOCK) {
+    return mockSession({
+      ...payload,
+      role: payload.accountType === 'organization' ? 'manager' : 'developer',
+      linked: payload.accountType === 'organization',
+    })
+  }
+
+  const endpoint =
+    payload.accountType === 'organization'
+      ? '/auth/register-organizacao'
+      : '/auth/register'
+
+  const request =
+    payload.accountType === 'organization'
+      ? {
+          name: payload.name,
+          email: payload.email,
+          password: payload.password,
+          organizationName: payload.organizationName,
+          cnpj: payload.cnpj,
+        }
+      : {
+          name: payload.name,
+          email: payload.email,
+          password: payload.password,
+          role: 'Colaborador',
+        }
+
   const { data } = await api.post<AuthSession>(endpoint, request)
+
   return normalizeSession(data)
 }
 
-export async function linkOrganization(code: string): Promise<AuthSession> {
+export async function linkOrganization(
+  code: string
+): Promise<AuthSession> {
   if (IS_MOCK) {
     const current = loadSession()
-    if (!current) throw new Error('Sessão não encontrada. Entre novamente.')
-    if (code.trim().length < 4) throw new Error('Código de acesso inválido.')
+
+    if (!current) {
+      throw new Error('Sessão não encontrada. Entre novamente.')
+    }
+
+    if (code.trim().length < 4) {
+      throw new Error('Código de acesso inválido.')
+    }
+
     return {
       ...current,
       token: `mock-linked-${Date.now()}`,
@@ -93,21 +161,41 @@ export async function linkOrganization(code: string): Promise<AuthSession> {
       },
     }
   }
-  const { data } = await api.post<AuthSession>('/auth/vincular-organizacao', { codigo: code })
+
+  const { data } = await api.post<AuthSession>(
+    '/auth/vincular-organizacao',
+    { codigo: code }
+  )
+
   return normalizeSession(data)
 }
 
-export function saveSession(session: AuthSession, remember: boolean) {
+export function saveSession(
+  session: AuthSession,
+  remember: boolean
+) {
+  const normalizedSession = normalizeSession(session)
+
   const storage = remember ? localStorage : sessionStorage
   const otherStorage = remember ? sessionStorage : localStorage
+
   otherStorage.removeItem(SESSION_KEY)
-  storage.setItem(SESSION_KEY, JSON.stringify(session))
+
+  storage.setItem(
+    SESSION_KEY,
+    JSON.stringify(normalizedSession)
+  )
 }
 
 export function loadSession(): AuthSession | null {
   try {
-    const raw = localStorage.getItem(SESSION_KEY) ?? sessionStorage.getItem(SESSION_KEY)
-    return raw ? JSON.parse(raw) as AuthSession : null
+    const raw =
+      localStorage.getItem(SESSION_KEY) ??
+      sessionStorage.getItem(SESSION_KEY)
+
+    return raw
+      ? normalizeSession(JSON.parse(raw) as AuthSession)
+      : null
   } catch {
     clearSession()
     return null

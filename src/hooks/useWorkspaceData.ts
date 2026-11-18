@@ -1,3 +1,4 @@
+
 import { useCallback, useEffect, useState } from 'react'
 import * as api from '../api'
 import type { Member, Project, Sprint, Task } from '../types'
@@ -9,7 +10,12 @@ export interface WorkspaceData {
   members: Member[]
 }
 
-const emptyData: WorkspaceData = { projects: [], tasks: [], sprints: [], members: [] }
+const emptyData: WorkspaceData = {
+  projects: [],
+  tasks: [],
+  sprints: [],
+  members: [],
+}
 
 export default function useWorkspaceData() {
   const [data, setData] = useState<WorkspaceData>(emptyData)
@@ -19,6 +25,7 @@ export default function useWorkspaceData() {
   const reload = useCallback(async () => {
     setLoading(true)
     setError(null)
+
     try {
       const [projects, tasks, sprints, members] = await Promise.all([
         api.projetos.listarProjetos(),
@@ -26,8 +33,20 @@ export default function useWorkspaceData() {
         api.sprints.listarSprints(),
         api.usuarios.listarUsuarios(),
       ])
-      setData({ projects, tasks, sprints, members })
+
+      setData({
+        projects,
+        tasks,
+        sprints,
+        members,
+      })
+
+      console.log('DADOS CARREGADOS DO WORKSPACE:', {
+        tasks,
+        members,
+      })
     } catch (requestError) {
+      console.error('ERRO AO CARREGAR WORKSPACE:', requestError)
       setError(api.getApiErrorMessage(requestError))
     } finally {
       setLoading(false)
@@ -38,5 +57,11 @@ export default function useWorkspaceData() {
     void reload()
   }, [reload])
 
-  return { ...data, setData, loading, error, reload }
+  return {
+    ...data,
+    setData,
+    loading,
+    error,
+    reload,
+  }
 }
