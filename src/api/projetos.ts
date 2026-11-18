@@ -5,21 +5,26 @@ import type { Project } from '../types'
 import { listarStatus } from './catalogos'
 
 export async function listarProjetos(): Promise<Project[]> {
-  if (IS_MOCK) return mock.listarProjetos()
+  console.log('IS_MOCK:', IS_MOCK)
+
+  if (IS_MOCK) {
+    console.log('CARREGANDO PROJETOS DO MOCK')
+    return mock.listarProjetos()
+  }
+
+  console.log('CARREGANDO PROJETOS DA API REAL')
 
   const { data } = await api.get<Project[]>('/projetos')
+
+  console.log('PROJETOS RECEBIDOS DA API:', data)
 
   return data.map((project) => ({
     ...project,
     teamIds: Array.isArray(project.teamIds)
       ? project.teamIds.map(Number)
       : [],
-    team: Array.isArray(project.team)
-      ? project.team
-      : [],
-    risks: Array.isArray(project.risks)
-      ? project.risks
-      : [],
+    team: Array.isArray(project.team) ? project.team : [],
+    risks: Array.isArray(project.risks) ? project.risks : [],
     milestones: Array.isArray(project.milestones)
       ? project.milestones
       : [],
@@ -27,14 +32,14 @@ export async function listarProjetos(): Promise<Project[]> {
       total: 0,
       done: 0,
       active: 0,
-      delayed: 0
+      delayed: 0,
     },
     tasks: project.tasks ?? {
       total: 0,
       done: 0,
       delayed: 0,
       blocked: 0,
-      cancelled: 0
+      cancelled: 0,
     },
   }))
 }
