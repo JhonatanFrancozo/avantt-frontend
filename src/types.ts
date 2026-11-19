@@ -1,4 +1,3 @@
-
 export type TaskStatus =
   | 'planejada'
   | 'em andamento'
@@ -49,6 +48,16 @@ export interface AuthSession {
   token: string
   user: SessionUser
 }
+
+export type LoginResult =
+  | {
+      requiresFirstAccessValidation: true
+      email: string
+    }
+  | {
+      requiresFirstAccessValidation: false
+      session: AuthSession
+    }
 
 export interface LoginPayload {
   email: string

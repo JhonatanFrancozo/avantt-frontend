@@ -1,6 +1,10 @@
-
 import { api, IS_MOCK } from './client'
-import type { AuthSession, LoginPayload, SignupPayload } from '../types'
+import type {
+  AuthSession,
+  LoginPayload,
+  LoginResult,
+  SignupPayload,
+} from '../types'
 
 const SESSION_KEY = 'avantt.session'
 
@@ -72,29 +76,60 @@ function mockSession(payload: {
 
 export async function login(
   payload: LoginPayload
-): Promise<AuthSession> {
-  if (IS_MOCK) return mockSession(payload)
+): Promise<LoginResult> {
+  if (IS_MOCK) {
+    return {
+      requiresFirstAccessValidation: false,
+      session: mockSession(payload),
+    }
+  }
 
-  const { data } = await api.post<AuthSession>('/auth/login', {
-    email: payload.email,
-    password: payload.password,
+  const { data } = await api.post<LoginResult | AuthSession>(
+    '/auth/login',
+    {
+      email: payload.email,
+      password: payload.password,
+    }
+  )
+
+  const response = data as LoginResult & Partial<AuthSession>
+
+  if (response.requiresFirstAccessValidation === true) {
+    return {
+      requiresFirstAccessValidation: true,
+      email: response.email ?? payload.email,
+    }
+  }
+
+  const session = normalizeSession({
+    token: response.token as string,
+    user: response.user as AuthSession['user'],
   })
 
-  return normalizeSession(data)
+  return {
+    requiresFirstAccessValidation: false,
+    session,
+  }
 }
 
 export async function acceptInvitation(payload: {
-  token: string
-  name: string
+  email: string
   password: string
+  codigo: string
 }): Promise<AuthSession> {
   if (IS_MOCK) {
-    throw new Error('Aceitação de convite exige o backend real.')
+    throw new Error(
+      'A validação do primeiro acesso exige o backend real.'
+    )
   }
 
   const { data } = await api.post<AuthSession>(
     '/auth/convite/aceitar',
-    payload
+    {
+      email: payload.email,
+      password: payload.password,
+      codigo: payload.codigo,
+    }
   )
 
   return normalizeSession(data)
