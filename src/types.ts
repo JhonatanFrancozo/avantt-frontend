@@ -1,4 +1,5 @@
 export type TaskStatus = 'Planejada' | 'Em andamento' | 'Concluída' | 'Bloqueada'
+export type SprintStatus = 'Planejada' | 'Em andamento' | 'Finalizada'
 export type TaskPriority = 'crítica' | 'alta' | 'média' | 'baixa'
 export type TaskType = 'Feature' | 'Bug' | 'Melhoria' | 'Infra'
 export type Page = 'overview' | 'projects' | 'sprints' | 'backlog' | 'team' | 'clients' | 'organization' | 'reports'
@@ -16,6 +17,7 @@ export interface SessionUser {
   organizationId?: number
   organizationName?: string
   projectIds?: string[]
+  hasProjects?: boolean
   cpf?: string
   phone?: string
 }
@@ -23,6 +25,8 @@ export interface SessionUser {
 export interface AuthSession {
   token: string
   user: SessionUser
+  requiresFirstAccessValidation?: boolean
+  email?: string
 }
 
 export interface LoginPayload {
@@ -45,7 +49,6 @@ export interface Organization {
   tradeName: string
   legalName: string
   cnpj: string
-  contact: string
   email: string
   phone: string
   createdAt?: string
@@ -53,22 +56,12 @@ export interface Organization {
 
 export interface Client {
   id: number
-  organizationId: number
+  organizationId?: number
   name: string
-  document: string
-  email: string
-  phone: string
+  document?: string
+  email?: string
+  phone?: string
   createdAt?: string
-  defaultUser?: {
-    name: string
-    email: string
-    cpf?: string
-    phone?: string
-    jobTitle?: string
-    status: 'invite-pending' | 'active'
-    role: 'manager'
-    projectIds: string[]
-  }
 }
 
 export interface Task {
@@ -101,7 +94,7 @@ export interface Task {
 export interface Sprint {
   id: number
   projectId?: number
-  statusId?: number
+  status: SprintStatus
   teamIds?: number[]
   name: string
   project: string
@@ -159,6 +152,7 @@ export interface Project {
   color: string
   description: string
   status: string
+  statusName?: string
   startDate: string
   endDate: string
   progress: number

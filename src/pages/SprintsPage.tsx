@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { c } from '../theme'
-import { Avatar, BtnPrimary } from '../components/atoms'
+import { Avatar } from '../components/atoms'
 import ProgressBar from '../components/atoms/ProgressBar'
 import { fmtDateShort } from '../utils'
 import { delayColor, delayHex } from '../utils'
@@ -11,10 +11,11 @@ interface Props {
   projects: Project[]
   members: Member[]
   onCreateSprint: () => void
+  onEditSprint?: (sprint: Sprint) => void
   canCreate?: boolean
 }
 
-export default function SprintsPage({ sprints, projects, members, onCreateSprint, canCreate = true }: Props) {
+export default function SprintsPage({ sprints, projects, members, onEditSprint }: Props) {
   const [filterProject, setFilterProject] = useState('')
   const filtered = filterProject ? sprints.filter((s) => s.project === filterProject) : sprints
 
@@ -31,7 +32,7 @@ export default function SprintsPage({ sprints, projects, members, onCreateSprint
             )
           })}
         </div>
-        {canCreate && <BtnPrimary onClick={onCreateSprint}>＋ Nova Sprint</BtnPrimary>}
+        {/* O botão de criação está centralizado no PageHeader; removido aqui para evitar duplicação */}
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 16 }}>
@@ -59,10 +60,11 @@ export default function SprintsPage({ sprints, projects, members, onCreateSprint
                       <span style={{ fontSize: 11, color: c.textMuted }}>{sprint.project}</span>
                     </div>
                   </div>
-                  <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                  <div style={{ display: 'flex', gap: 6, flexShrink: 0, alignItems: 'center' }}>
                     {sprint.daysDelayed > 0 && <span style={{ padding: '3px 8px', borderRadius: 4, fontSize: 11, fontWeight: 700, fontFamily: 'var(--font-mono)', backgroundColor: rawHex + '22', color: barColor }}>+{sprint.daysDelayed}d atraso</span>}
                     {daysLeft !== null && daysLeft >= 0 && sprint.daysDelayed === 0 && <span style={{ padding: '3px 8px', borderRadius: 4, fontSize: 11, fontFamily: 'var(--font-mono)', backgroundColor: c.blueLight, color: c.blue }}>{daysLeft}d restantes</span>}
-                    {sprint.progress === 100 && <span style={{ padding: '3px 8px', borderRadius: 4, fontSize: 11, fontWeight: 700, backgroundColor: c.greenLight, color: c.green }}>Concluída</span>}
+                    <span style={{ padding: '3px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600, backgroundColor: sprint.status === 'Finalizada' ? c.greenLight : c.blueLight, color: sprint.status === 'Finalizada' ? c.green : c.blue }}>{sprint.status}</span>
+                    {onEditSprint && <button type="button" onClick={() => onEditSprint(sprint)} aria-label={`Editar ${sprint.name}`} style={{ padding: '4px 8px', borderRadius: 5, border: `1px solid ${c.border}`, backgroundColor: c.surface, color: c.textSecondary, fontSize: 11, cursor: 'pointer' }}>Editar</button>}
                   </div>
                 </div>
 

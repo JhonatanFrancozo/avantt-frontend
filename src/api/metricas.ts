@@ -1,4 +1,4 @@
-import { api, IS_MOCK } from './client'
+import { api, shouldUseMock } from './client'
 import { INIT_MEMBERS, INIT_PROJECTS, INIT_TASKS } from '../constants'
 
 export interface MetricPoint {
@@ -78,7 +78,7 @@ function mockMetrics(projectId: string | number): ProjectMetrics {
 }
 
 export async function obterMetricasProjeto(projectId: string | number): Promise<ProjectMetrics> {
-  if (IS_MOCK) return mockMetrics(projectId)
+  if (shouldUseMock()) return mockMetrics(projectId)
 
   const [overviewResponse, statusResponse, overdueResponse, membersResponse] = await Promise.all([
     api.get<UnknownRecord>(`/metricas/project/${projectId}/overview`),

@@ -1,41 +1,14 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 import { c, STATUS_META } from '../../theme'
-import { DEV_CURRENT_USER } from '../../constants'
-import type { Project, Task } from '../../types'
+import type { Project, Sprint, Task } from '../../types'
+import { getApiErrorMessage } from '../../api'
 
 function fmtDate(d: string) {
   const [y, m, day] = d.split('-')
   return `${day}/${m}/${y.slice(2)}`
 }
 
-const SPRINT_NAME = DEV_CURRENT_USER.sprint
-
-interface WeekItem { id: string; label: string; done?: boolean; isEvent?: boolean }
-const WEEK_DAYS: { day: string; date: number; past?: boolean; today?: boolean; urgent?: boolean; items: WeekItem[] }[] = [
-  { day: 'Seg', date: 18, past: true, items: [{ id: 'a', label: 'T-215 concluída', done: true }, { id: 'b', label: 'T-218 concluída', done: true }] },
-  { day: 'Ter', date: 19, today: true, items: [{ id: 'c', label: 'T-235 em andamento', done: false }, { id: 'd', label: 'T-229 iniciada', done: false }, { id: 'e', label: 'Daily 9h', isEvent: true }] },
-  { day: 'Qua', date: 20, items: [{ id: 'f', label: 'T-238 em andamento', done: false }, { id: 'g', label: 'Review Sprint', isEvent: true }] },
-  { day: 'Qui', date: 21, urgent: true, items: [{ id: 'h', label: 'T-235 — prazo', done: false }] },
-  { day: 'Sex', date: 22, urgent: true, items: [{ id: 'i', label: 'T-241 — prazo', done: false }, { id: 'j', label: 'Planning S19', isEvent: true }] },
-]
-
-const PROFILE_METRICS = [
-  { label: 'PRs abertas', value: 3, trend: +1, trendLabel: '+1' },
-  { label: 'Code Reviews', value: 5, trend: 0, trendLabel: '—' },
-  { label: 'Bugs abertos', value: 2, trend: -1, trendLabel: '-1' },
-  { label: 'Lead time médio', value: '2.4d', trend: 0, trendLabel: '—' },
-  { label: 'Tasks reabertas', value: 1, trend: 0, trendLabel: '—' },
-  { label: 'Bloqueios / Sprint', value: 2, trend: +1, trendLabel: '+1' },
-]
-
-const INSIGHTS = [
-  { color: '#4B7BF5', bg: 'rgba(75,123,245,0.05)', border: 'rgba(75,123,245,0.18)', title: 'Priorização sugerida', text: 'T-235 (bug de autenticação) tem prazo amanhã e está apenas 30% concluída. Priorize antes de iniciar T-229.' },
-  { color: '#E07B2A', bg: 'rgba(224,123,42,0.05)', border: 'rgba(224,123,42,0.18)', title: 'Risco de atraso', text: 'T-241 consumiu 7h de 8h estimadas e ainda está 60% concluída. Risco real de ultrapassar estimativa em ~4h.' },
-  { color: '#D95050', bg: 'rgba(217,80,80,0.05)', border: 'rgba(217,80,80,0.18)', title: 'Bloqueio prolongado', text: 'T-241 está bloqueada há 2 dias. Cada dia adicional aumenta o risco de não entregar a Sprint no prazo.' },
-  { color: '#7C5CDE', bg: 'rgba(124,92,222,0.05)', border: 'rgba(124,92,222,0.18)', title: 'Previsão de Sprint', text: 'Com ritmo atual (~3.2h/dia útil), você deve concluir as tarefas restantes em ~6 dias. Sprint encerra em 7 dias. Margem baixa.' },
-  { color: '#37A066', bg: 'rgba(55,160,102,0.05)', border: 'rgba(55,160,102,0.18)', title: 'Tendência de estimativa', text: 'Suas últimas 3 tarefas tiveram média de 15% de estouro em relação à estimativa. Considere ajustar o buffer no próximo planejamento.' },
-]
 
 // ── Shared sub-components ─────────────────────────────────────────────────────
 
@@ -60,7 +33,15 @@ function KPICard({ label, value, sub, color }: { label: string; value: string | 
 
 // ── Sprint Health ─────────────────────────────────────────────────────────────
 
-function SprintHealth({ tasks }: { tasks: Task[] }) {
+function SprintHealth({ tasks, sprints }: { tasks: Task[]; sprints: Sprint[] }) {
+  if (sprints.length === 0) {
+    return (
+      <div style={{ backgroundColor: c.surface, border: `1px solid ${c.border}`, borderRadius: 12, padding: '24px', color: c.textMuted, textAlign: 'center', fontSize: 13 }}>
+        Nenhuma sprint vinculada aos seus projetos.
+      </div>
+    )
+  }
+  const activeSprint = [...sprints].sort((a, b) => b.progress - a.progress)[0]
   const done = tasks.filter((t) => t.status === 'Concluída').length
   const inProg = tasks.filter((t) => t.status === 'Em andamento').length
   const blocked = tasks.filter((t) => t.status === 'Bloqueada').length
@@ -81,7 +62,7 @@ function SprintHealth({ tasks }: { tasks: Task[] }) {
     <div style={{ backgroundColor: c.surface, border: `1px solid ${c.border}`, borderRadius: 12, padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 14, transition: 'background-color 0.3s' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
-          <div style={{ fontSize: 14, fontWeight: 700, color: c.textPrimary }}>{SPRINT_NAME}</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: c.textPrimary }}>{activeSprint.name}</div>
           <div style={{ fontSize: 12, color: c.textMuted, marginTop: 1 }}>Saúde da Sprint</div>
         </div>
         <span style={{ fontSize: 12, fontWeight: 600, padding: '4px 12px', borderRadius: 20, backgroundColor: hm.bg, color: hm.color, border: `1px solid ${hm.color}22` }}>{hm.label}</span>
@@ -115,11 +96,26 @@ function SprintHealth({ tasks }: { tasks: Task[] }) {
 
 // ── Next Best Action ──────────────────────────────────────────────────────────
 
-function NextBestAction({ tasks }: { tasks: Task[] }) {
+function NextBestAction({ tasks, onStartTask }: { tasks: Task[]; onStartTask: (task: Task) => Promise<void> }) {
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
   const candidate = useMemo(() => {
     const open = tasks.filter((t) => t.status === 'Em andamento' || t.status === 'Planejada')
     return open.find((t) => t.daysDelayed > 0) ?? open.sort((a, b) => new Date(a.plannedEnd).getTime() - new Date(b.plannedEnd).getTime())[0]
   }, [tasks])
+
+  async function startTask() {
+    if (!candidate || candidate.status !== 'Planejada') return
+    setSaving(true)
+    setError('')
+    try {
+      await onStartTask(candidate)
+    } catch (requestError) {
+      setError(getApiErrorMessage(requestError))
+    } finally {
+      setSaving(false)
+    }
+  }
 
   if (!candidate) return null
   const hoursLeft = Math.max(0, candidate.estimatedHours - (candidate.hoursSpent ?? 0))
@@ -141,9 +137,10 @@ function NextBestAction({ tasks }: { tasks: Task[] }) {
       <div style={{ fontSize: 12, color: c.textMuted }}>
         {candidate.daysDelayed > 0 ? 'Tarefa em atraso — requer atenção imediata.' : 'Prazo mais próximo entre as tarefas abertas.'}
       </div>
-      <button style={{ alignSelf: 'flex-start', padding: '7px 18px', borderRadius: 7, border: `1px solid rgba(75,123,245,0.4)`, background: 'rgba(75,123,245,0.06)', color: '#4B7BF5', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-        Iniciar tarefa
+      <button disabled={saving || candidate.status !== 'Planejada'} onClick={() => void startTask()} style={{ alignSelf: 'flex-start', padding: '7px 18px', borderRadius: 7, border: `1px solid rgba(75,123,245,0.4)`, background: 'rgba(75,123,245,0.06)', color: '#4B7BF5', fontSize: 13, fontWeight: 600, cursor: saving || candidate.status !== 'Planejada' ? 'default' : 'pointer', opacity: saving || candidate.status !== 'Planejada' ? 0.6 : 1 }}>
+        {candidate.status === 'Planejada' ? (saving ? 'Iniciando...' : 'Iniciar tarefa') : 'Já em andamento'}
       </button>
+      {error && <div role="alert" style={{ color: c.red, fontSize: 12 }}>{error}</div>}
     </div>
   )
 }
@@ -282,32 +279,44 @@ function ProjectsSection({ projects }: { projects: Project[] }) {
 
 // ── My Week ───────────────────────────────────────────────────────────────────
 
-function MyWeek() {
+function MyWeek({ tasks }: { tasks: Task[] }) {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const days = Array.from({ length: 5 }, (_, index) => {
+    const date = new Date(today)
+    date.setDate(today.getDate() + index)
+    return date
+  })
+
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 10 }}>
-      {WEEK_DAYS.map(({ day, date, today, past, urgent, items }) => (
-        <div key={date} style={{ backgroundColor: c.surface, border: `2px solid ${today ? '#4B7BF5' : c.border}`, borderRadius: 10, padding: '12px 14px', opacity: past ? 0.6 : 1, transition: 'background-color 0.3s' }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 8 }}>
-            <span style={{ fontSize: 12, color: c.textMuted }}>{day}</span>
-            <span style={{ fontSize: 16, fontWeight: 700, color: urgent ? '#D95050' : today ? '#4B7BF5' : c.textSecondary }}>{date}</span>
-          </div>
-          {today && <div style={{ fontSize: 10, fontWeight: 700, color: '#4B7BF5', marginBottom: 6, letterSpacing: '0.06em' }}>HOJE</div>}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-            {items.map((item) => (
-              <div key={item.id} style={{ fontSize: 11, color: past ? c.textMuted : urgent && !item.isEvent ? '#D95050' : c.textSecondary, textDecoration: past && item.done ? 'line-through' : 'none', padding: '3px 6px', borderRadius: 4, backgroundColor: item.isEvent ? `${c.border}55` : 'transparent' }}>
-                {item.label}
+      {days.map((date, index) => {
+        const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+        const dayTasks = tasks.filter((task) => task.plannedEnd === key && task.status !== 'Concluída')
+        const isToday = index === 0
+        return (
+          <div key={key} style={{ backgroundColor: c.surface, border: `1px solid ${isToday ? '#4B7BF5' : c.border}`, borderRadius: 10, padding: '12px 14px', minHeight: 94 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+              <span style={{ fontSize: 12, color: c.textMuted }}>{date.toLocaleDateString('pt-BR', { weekday: 'short' })}</span>
+              <span style={{ fontSize: 16, fontWeight: 700, color: isToday ? '#4B7BF5' : c.textSecondary }}>{date.getDate()}</span>
+            </div>
+            {dayTasks.length === 0 ? (
+              <div style={{ fontSize: 11, color: c.textMuted }}>Nenhuma entrega prevista</div>
+            ) : dayTasks.map((task) => (
+              <div key={task.id} style={{ fontSize: 11, color: task.daysDelayed > 0 ? '#D95050' : c.textSecondary, marginBottom: 4 }}>
+                {task.id} · {task.title}
               </div>
             ))}
           </div>
-        </div>
-      ))}
+        )
+      })}
     </div>
   )
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 
-export default function DevOverviewPage({ tasks, projects }: { tasks: Task[]; projects: Project[] }) {
+export default function DevOverviewPage({ tasks, projects, sprints, onStartTask }: { tasks: Task[]; projects: Project[]; sprints: Sprint[]; onStartTask: (task: Task) => Promise<void> }) {
   const inProgress = tasks.filter((t) => t.status === 'Em andamento').length
   const done = tasks.filter((t) => t.status === 'Concluída').length
   const blocked = tasks.filter((t) => t.status === 'Bloqueada').length
@@ -336,19 +345,19 @@ export default function DevOverviewPage({ tasks, projects }: { tasks: Task[]; pr
         <KPICard label="Bloqueadas" value={blocked} sub="requerem ação" color="#D95050" />
         <KPICard label="Hrs estimadas" value={`${totalEstimated}h`} sub="total da sprint" color={c.textPrimary} />
         <KPICard label="Hrs realizadas" value={`${totalSpent}h`} sub={totalSpent > totalEstimated ? 'acima do estimado' : 'dentro do plano'} color={totalSpent > totalEstimated ? '#D95050' : c.textPrimary} />
-        <KPICard label="Progresso" value={`${sprintPct}%`} sub={SPRINT_NAME} color={sprintPct >= 70 ? '#37A066' : sprintPct >= 40 ? '#4B7BF5' : '#E07B2A'} />
+        <KPICard label="Progresso" value={`${sprintPct}%`} sub={sprints[0]?.name ?? 'Sem sprint'} color={sprintPct >= 70 ? '#37A066' : sprintPct >= 40 ? '#4B7BF5' : '#E07B2A'} />
       </div>
 
       {/* Sprint Health */}
       <section style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <SectionHeader title="Sprint Health" />
-        <SprintHealth tasks={tasks} />
+        <SprintHealth tasks={tasks} sprints={sprints} />
       </section>
 
       {/* Next Best Action */}
       <section style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <SectionHeader title="Próxima Ação Recomendada" />
-        <NextBestAction tasks={tasks} />
+        <NextBestAction tasks={tasks} onStartTask={onStartTask} />
       </section>
 
       {/* Blockers & Risks */}
@@ -417,36 +426,7 @@ export default function DevOverviewPage({ tasks, projects }: { tasks: Task[]; pr
       {/* My week */}
       <section style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <SectionHeader title="Minha Semana" />
-        <MyWeek />
-      </section>
-
-      {/* Profile metrics */}
-      <section style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <SectionHeader title="Métricas — Frontend" />
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 12 }}>
-          {PROFILE_METRICS.map((m) => (
-            <div key={m.label} style={{ backgroundColor: c.surface, border: `1px solid ${c.border}`, borderRadius: 10, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 6, transition: 'background-color 0.3s' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
-                <span style={{ fontSize: 11, color: m.trend > 0 ? '#D95050' : m.trend < 0 ? '#37A066' : c.textMuted, fontWeight: 600 }}>{m.trendLabel}</span>
-              </div>
-              <div style={{ fontSize: 22, fontWeight: 700, color: c.textPrimary }}>{m.value}</div>
-              <div style={{ fontSize: 11, color: c.textMuted, lineHeight: 1.3 }}>{m.label}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Insights */}
-      <section style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <SectionHeader title="Insights e Recomendações" />
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
-          {INSIGHTS.map((ins) => (
-            <div key={ins.title} style={{ backgroundColor: ins.bg, border: `1px solid ${ins.border}`, borderLeft: `3px solid ${ins.color}`, borderRadius: 10, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 7 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: ins.color }}>{ins.title}</div>
-              <div style={{ fontSize: 12, color: c.textSecondary, lineHeight: 1.55 }}>{ins.text}</div>
-            </div>
-          ))}
-        </div>
+        <MyWeek tasks={tasks} />
       </section>
     </div>
   )

@@ -2,6 +2,8 @@ import { useState, useMemo } from 'react'
 import { c, STATUS_META } from '../../theme'
 import TaskDetailModal from '../../modals/TaskDetailModal'
 import type { Project, Task, TaskStatus, TaskType, TaskPriority } from '../../types'
+import { getApiErrorMessage } from '../../api'
+import { getTaskStatusActions } from '../../utils'
 
 // ── Type badge (SVG-based, no emoji) ─────────────────────────────────────────
 
@@ -48,42 +50,56 @@ const STATUS_COLS: { status: TaskStatus; label: string }[] = [
 const PRIORITIES: TaskPriority[] = ['crítica', 'alta', 'média', 'baixa']
 // ── Status selector (inline dropdown) ────────────────────────────────────────
 
-function StatusSelector({ task, onUpdate }: { task: Task; onUpdate: (t: Task) => void }) {
+function StatusSelector({ task, onUpdate }: { task: Task; onUpdate: (t: Task) => Promise<void> }) {
   const [open, setOpen] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
   const meta = STATUS_META[task.status]
-  const statuses: TaskStatus[] = ['Planejada', 'Em andamento', 'Bloqueada', 'Concluída']
+  const actions = getTaskStatusActions(task.status)
+
+  async function changeStatus(status: TaskStatus) {
+    setSaving(true)
+    setError('')
+    try {
+      await onUpdate({ ...task, status })
+      setOpen(false)
+    } catch (requestError) {
+      setError(getApiErrorMessage(requestError))
+    } finally {
+      setSaving(false)
+    }
+  }
 
   return (
     <div style={{ position: 'relative' }}>
       <button
-        onClick={(e) => { e.stopPropagation(); setOpen((o) => !o) }}
-        style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 20, border: `1px solid ${meta.dot}33`, background: meta.bg, color: meta.text, fontSize: 11, fontWeight: 500, cursor: 'pointer' }}
+        onClick={(e) => { e.stopPropagation(); setOpen((o) => !o); setError('') }}
+        disabled={saving || actions.length === 0}
+        style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 20, border: `1px solid ${meta.dot}33`, background: meta.bg, color: meta.text, fontSize: 11, fontWeight: 500, cursor: actions.length ? 'pointer' : 'default', opacity: saving ? 0.6 : 1 }}
       >
         <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: meta.dot, flexShrink: 0 }} />
         {meta.label}
-        <svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M2 3.5l3 3 3-3"/></svg>
+        {actions.length > 0 && <svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M2 3.5l3 3 3-3"/></svg>}
       </button>
       {open && (
         <div
           style={{ position: 'absolute', top: '100%', left: 0, marginTop: 4, backgroundColor: c.surface, border: `1px solid ${c.border}`, borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.12)', zIndex: 200, minWidth: 160 }}
           onClick={(e) => e.stopPropagation()}
         >
-          {statuses.map((s) => {
-            const sm = STATUS_META[s]
+          {actions.map((action) => {
+            const sm = STATUS_META[action.status]
             return (
               <div
-                key={s}
-                onClick={() => { onUpdate({ ...task, status: s }); setOpen(false) }}
-                style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', cursor: 'pointer', fontSize: 12, color: task.status === s ? '#4B7BF5' : c.textPrimary, fontWeight: task.status === s ? 600 : 400, backgroundColor: task.status === s ? 'rgba(75,123,245,0.05)' : 'transparent' }}
+                key={action.status}
+                onClick={() => { if (!saving) void changeStatus(action.status) }}
+                style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', cursor: saving ? 'default' : 'pointer', fontSize: 12, color: sm.text, fontWeight: 500, opacity: saving ? 0.6 : 1 }}
               >
                 <span style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: sm.dot, flexShrink: 0 }} />
-                {sm.label}
-                {task.status === s && (
-                  <svg style={{ marginLeft: 'auto' }} width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="#4B7BF5" strokeWidth="2" strokeLinecap="round"><path d="M2 6l3 3 5-5"/></svg>
-                )}
+                {action.label}
               </div>
             )
           })}
+          {error && <div role="alert" style={{ maxWidth: 240, padding: '8px 12px', borderTop: `1px solid ${c.border}`, color: c.red, fontSize: 11 }}>{error}</div>}
         </div>
       )}
     </div>
@@ -92,7 +108,7 @@ function StatusSelector({ task, onUpdate }: { task: Task; onUpdate: (t: Task) =>
 
 // ── Kanban card ───────────────────────────────────────────────────────────────
 
-function KanbanCard({ task, onUpdate, onOpen }: { task: Task; onUpdate: (t: Task) => void; onOpen: (t: Task) => void }) {
+function KanbanCard({ task, onUpdate, onOpen }: { task: Task; onUpdate: (t: Task) => Promise<void>; onOpen: (t: Task) => void }) {
   const pri = PRI[task.priority]
   const isOver = (task.hoursSpent ?? 0) > task.estimatedHours
 
@@ -160,7 +176,7 @@ function KanbanCard({ task, onUpdate, onOpen }: { task: Task; onUpdate: (t: Task
 
 // ── List row ──────────────────────────────────────────────────────────────────
 
-function ListRow({ task, onUpdate, onOpen }: { task: Task; onUpdate: (t: Task) => void; onOpen: (t: Task) => void }) {
+function ListRow({ task, onUpdate, onOpen }: { task: Task; onUpdate: (t: Task) => Promise<void>; onOpen: (t: Task) => void }) {
   const pri = PRI[task.priority]
   const isOver = (task.hoursSpent ?? 0) > task.estimatedHours
 
@@ -244,7 +260,7 @@ export default function MyTasksPage({ tasks, projects, onUpdateTask }: Props) {
     return r
   }, [tasks])
 
-  const filterPills = ['Todos', 'Planejada', 'Em andamento', 'Bloqueada', 'Concluída']
+  const filterPills = ['Todos', ...STATUS_COLS.map(({ status }) => status)]
   const inProgress = tasks.filter((t) => t.status === 'Em andamento').length
 
   return (
@@ -302,7 +318,8 @@ export default function MyTasksPage({ tasks, projects, onUpdateTask }: Props) {
 
       {/* Kanban */}
       {view === 'kanban' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, flex: 1 }}>
+        <div style={{ overflowX: 'auto', flex: 1 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${STATUS_COLS.length}, minmax(210px, 1fr))`, gap: 14, minWidth: STATUS_COLS.length * 224 }}>
           {STATUS_COLS.map(({ status, label }) => {
             const meta = STATUS_META[status]
             const colTasks = filtered.filter((t) => t.status === status)
@@ -320,6 +337,7 @@ export default function MyTasksPage({ tasks, projects, onUpdateTask }: Props) {
               </div>
             )
           })}
+        </div>
         </div>
       )}
 
@@ -347,7 +365,7 @@ export default function MyTasksPage({ tasks, projects, onUpdateTask }: Props) {
           task={detailTask}
           readOnly
           onClose={() => setDetailTask(null)}
-          onSave={updateTask}
+          onStatusChange={updateTask}
         />
       )}
     </div>

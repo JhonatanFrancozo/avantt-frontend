@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { c, STATUS_META, STATUS_OPTIONS } from '../theme'
 import type { Task, TaskStatus, TaskPriority } from '../types'
+import { getApiErrorMessage } from '../api'
+import { getTaskStatusActions } from '../utils'
 
 const PRIORITY_COLORS: Record<TaskPriority, string> = {
   crítica: '#D95050', alta: '#E07B2A', média: '#4B7BF5', baixa: '#37A066',
@@ -13,7 +15,8 @@ interface Props {
   task: Task
   readOnly?: boolean
   onClose: () => void
-  onSave?: (updated: Task) => void
+  onSave?: (updated: Task) => Promise<void>
+  onStatusChange?: (updated: Task) => Promise<void>
 }
 
 function StatusDot({ status }: { status: TaskStatus }) {
@@ -26,19 +29,46 @@ function StatusDot({ status }: { status: TaskStatus }) {
   )
 }
 
-export default function TaskDetailModal({ task: initial, readOnly = false, onClose, onSave }: Props) {
+export default function TaskDetailModal({ task: initial, readOnly = false, onClose, onSave, onStatusChange }: Props) {
   const [task, setTask] = useState(initial)
   const [editing, setEditing] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
 
   const inp: React.CSSProperties = {
     width: '100%', padding: '8px 10px', borderRadius: 6, border: `1px solid ${c.border}`,
     backgroundColor: c.bg, color: c.textPrimary, fontSize: 13, outline: 'none', boxSizing: 'border-box',
   }
 
-  function save() {
-    onSave?.(task)
-    setEditing(false)
-    onClose()
+  const statusActions = getTaskStatusActions(task.status)
+
+  async function save() {
+    setSaving(true)
+    setError('')
+    try {
+      await onSave?.(task)
+      setEditing(false)
+      onClose()
+    } catch (requestError) {
+      setError(getApiErrorMessage(requestError))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function changeStatus(status: TaskStatus) {
+    const updateStatus = onStatusChange ?? onSave
+    if (!updateStatus) return
+    setSaving(true)
+    setError('')
+    try {
+      await updateStatus({ ...task, status })
+      onClose()
+    } catch (requestError) {
+      setError(getApiErrorMessage(requestError))
+    } finally {
+      setSaving(false)
+    }
   }
 
   const isOverEstimate = (task.hoursSpent ?? 0) > task.estimatedHours
@@ -75,18 +105,15 @@ export default function TaskDetailModal({ task: initial, readOnly = false, onClo
             <div>
               <div style={{ fontSize: 11, fontWeight: 600, color: c.textMuted, marginBottom: 7, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Status</div>
               {editing && !readOnly ? (
-                <select value={task.status} onChange={(e) => setTask((t) => ({ ...t, status: e.target.value as TaskStatus }))} style={inp}>
-                  {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{STATUS_META[s].label}</option>)}
+                <select
+                  aria-label="Status da tarefa"
+                  value={task.status}
+                  onChange={(event) => setTask((current) => ({ ...current, status: event.target.value as TaskStatus }))}
+                  style={inp}
+                >
+                  {STATUS_OPTIONS.map((status) => <option key={status} value={status}>{status}</option>)}
                 </select>
-              ) : readOnly ? (
-                <div style={{ position: 'relative' }}>
-                  <select value={task.status} onChange={(e) => setTask((t) => ({ ...t, status: e.target.value as TaskStatus }))} style={{ ...inp, cursor: 'pointer' }}>
-                    {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{STATUS_META[s].label}</option>)}
-                  </select>
-                </div>
-              ) : (
-                <StatusDot status={task.status} />
-              )}
+              ) : <StatusDot status={task.status} />}
             </div>
             <div>
               <div style={{ fontSize: 11, fontWeight: 600, color: c.textMuted, marginBottom: 7, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Prioridade</div>
@@ -102,6 +129,22 @@ export default function TaskDetailModal({ task: initial, readOnly = false, onClo
               )}
             </div>
           </div>
+
+          {!editing && (onStatusChange || onSave) && statusActions.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {statusActions.map((action) => (
+                <button
+                  key={action.status}
+                  disabled={saving}
+                  onClick={() => void changeStatus(action.status)}
+                  style={{ padding: '7px 12px', borderRadius: 7, border: `1px solid ${STATUS_META[action.status].dot}55`, background: STATUS_META[action.status].bg, color: STATUS_META[action.status].text, fontSize: 12, fontWeight: 600, cursor: saving ? 'default' : 'pointer', opacity: saving ? 0.6 : 1 }}
+                >
+                  {action.label}
+                </button>
+              ))}
+            </div>
+          )}
+          {error && <div role="alert" style={{ color: c.red, fontSize: 12 }}>{error}</div>}
 
           {/* Project + Sprint */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
@@ -194,17 +237,10 @@ export default function TaskDetailModal({ task: initial, readOnly = false, onClo
         </div>
 
         {/* Footer */}
-        {(editing || readOnly) && (
+        {editing && !readOnly && (
           <div style={{ padding: '14px 22px', borderTop: `1px solid ${c.border}`, display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-            {editing && !readOnly && (
-              <>
-                <button onClick={() => setEditing(false)} style={{ padding: '7px 18px', borderRadius: 7, border: `1px solid ${c.border}`, background: 'transparent', color: c.textSecondary, fontSize: 13, cursor: 'pointer' }}>Cancelar</button>
-                <button onClick={save} style={{ padding: '7px 18px', borderRadius: 7, border: 'none', background: '#4B7BF5', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Salvar alterações</button>
-              </>
-            )}
-            {readOnly && (
-              <button onClick={() => { onSave?.(task); onClose() }} style={{ padding: '7px 18px', borderRadius: 7, border: 'none', background: '#4B7BF5', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Salvar status</button>
-            )}
+            <button disabled={saving} onClick={() => { setTask(initial); setEditing(false); setError('') }} style={{ padding: '7px 18px', borderRadius: 7, border: `1px solid ${c.border}`, background: 'transparent', color: c.textSecondary, fontSize: 13, cursor: 'pointer' }}>Cancelar</button>
+            <button disabled={saving} onClick={() => void save()} style={{ padding: '7px 18px', border: 'none', borderRadius: 7, background: '#4B7BF5', color: '#fff', fontSize: 13, fontWeight: 600, cursor: saving ? 'default' : 'pointer', opacity: saving ? 0.6 : 1 }}>Salvar alterações</button>
           </div>
         )}
       </div>

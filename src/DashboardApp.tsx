@@ -24,6 +24,7 @@ export default function DashboardApp({
   const { projects, tasks, sprints, members, setData, loading, error, reload } = useWorkspaceData()
   const [activeModal, setActiveModal] = useState<ActiveModal>(null)
   const [editingProject, setEditingProject] = useState<Project | null>(null)
+  const [editingSprint, setEditingSprint] = useState<Sprint | null>(null)
   const [profileOpen, setProfileOpen] = useState(false)
   const scopedProjectIds = user?.projectIds
   const visibleProjects = useMemo(
@@ -71,16 +72,33 @@ export default function DashboardApp({
     closeModal()
   }
 
+  async function updateTask(updated: Task) {
+    const saved = await api.tarefas.atualizarTarefa(updated.id, updated)
+    setData((current) => ({ ...current, tasks: current.tasks.map((task) => task.id === saved.id ? saved : task) }))
+  }
+
+  async function updateTaskStatus(id: string, status: Task['status']) {
+    const saved = await api.tarefas.atualizarStatusTarefa(id, status)
+    setData((current) => ({ ...current, tasks: current.tasks.map((task) => task.id === saved.id ? saved : task) }))
+  }
+
   async function saveSprint(body: Omit<Sprint, 'id'>) {
-    const created = await api.sprints.criarSprint(body)
-    setData((current) => ({ ...current, sprints: [...current.sprints, created] }))
+    if (editingSprint) {
+      const saved = await api.sprints.atualizarSprint(editingSprint.id, body)
+      setData((current) => ({ ...current, sprints: current.sprints.map((sprint) => sprint.id === saved.id ? saved : sprint) }))
+      setEditingSprint(null)
+    } else {
+      const created = await api.sprints.criarSprint(body)
+      setData((current) => ({ ...current, sprints: [...current.sprints, created] }))
+    }
     closeModal()
   }
 
-  async function saveMember(body: Omit<Member, 'id'>) {
-    const created = await api.usuarios.convidarUsuario(body)
+  async function saveMember(email: string, projectIds: string[]) {
+    await api.usuarios.vincularUsuarioPorEmail(email, projectIds)
     const refreshedProjects = await api.projetos.listarProjetos()
-    setData((current) => ({ ...current, members: [...current.members, created], projects: refreshedProjects }))
+    const refreshedMembers = await api.usuarios.listarUsuarios()
+    setData((current) => ({ ...current, members: refreshedMembers, projects: refreshedProjects }))
     closeModal()
   }
 
@@ -110,8 +128,8 @@ export default function DashboardApp({
         <div style={{ flex: 1, overflowY: 'auto' }}>
           {page === 'overview' && <OverviewPage tasks={visibleTasks} sprints={visibleSprints} members={visibleMembers} />}
           {page === 'projects' && <ProjectsPage projects={visibleProjects} members={visibleMembers} onCreateProject={() => { setEditingProject(null); setActiveModal('project') }} onEditProject={(project) => { setEditingProject(project); setActiveModal('project') }} canCreate={canManageWorkspace} />}
-          {page === 'sprints' && <SprintsPage sprints={visibleSprints} projects={visibleProjects} members={visibleMembers} onCreateSprint={() => setActiveModal('sprint')} canCreate={canManageWorkspace} />}
-          {page === 'backlog' && <BacklogPage tasks={visibleTasks} projects={visibleProjects} members={visibleMembers} onCreateTask={() => setActiveModal('task')} canCreate={canManageWorkspace} />}
+          {page === 'sprints' && <SprintsPage sprints={visibleSprints} projects={visibleProjects} members={visibleMembers} onCreateSprint={() => { setEditingSprint(null); setActiveModal('sprint') }} onEditSprint={canManageWorkspace ? (sprint) => { setEditingSprint(sprint); setActiveModal('sprint') } : undefined} />}
+          {page === 'backlog' && <BacklogPage tasks={visibleTasks} projects={visibleProjects} members={visibleMembers} onCreateTask={() => setActiveModal('task')} onUpdateTask={updateTask} onUpdateTaskStatus={updateTaskStatus} canCreate={canManageWorkspace} />}
           {page === 'team' && <TeamPage members={visibleMembers} projects={visibleProjects} onAddMember={() => setActiveModal('member')} canManage={canManageWorkspace} />}
           {page === 'clients' && <ClientsPage projects={projects} />}
           {page === 'organization' && <OrganizationPage />}
@@ -120,7 +138,7 @@ export default function DashboardApp({
       </main>
       {activeModal === 'project' && <CreateProjectModal members={members} initial={editingProject ?? undefined} onClose={() => { setEditingProject(null); closeModal() }} onSave={saveProject} />}
       {activeModal === 'task' && <CreateTaskModal projects={projects} tasks={tasks} members={members} sprints={sprints} onClose={closeModal} onSave={saveTask} />}
-      {activeModal === 'sprint' && <CreateSprintModal projects={projects} members={members} onClose={closeModal} onSave={saveSprint} />}
+      {activeModal === 'sprint' && <CreateSprintModal projects={projects} members={members} initial={editingSprint ?? undefined} onClose={() => { setEditingSprint(null); closeModal() }} onSave={saveSprint} />}
       {activeModal === 'member' && <CreateMemberModal projects={projects} onClose={closeModal} onSave={saveMember} />}
       {profileOpen && user && <ProfileModal user={user} onClose={() => setProfileOpen(false)} onSaved={(updated) => onUserUpdate?.(updated)} />}
     </div>

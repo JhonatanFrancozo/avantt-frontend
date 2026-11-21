@@ -4,13 +4,13 @@ import { BtnPrimary } from '../components/atoms'
 import { Field, Inp } from '../components/form'
 import { DataState } from '../components/layout'
 import type { Organization } from '../types'
+import { formatPhone } from '../utils'
 
 const emptyOrganization: Organization = {
   id: 0,
   tradeName: '',
   legalName: '',
   cnpj: '',
-  contact: '',
   email: '',
   phone: '',
 }
@@ -84,14 +84,11 @@ export default function OrganizationPage() {
           <Field label="CNPJ">
             <Inp value={organization.cnpj} onChange={(value) => update('cnpj', value)} placeholder="00.000.000/0000-00" />
           </Field>
-          <Field label="Pessoa de contato">
-            <Inp value={organization.contact} onChange={(value) => update('contact', value)} />
-          </Field>
           <Field label="E-mail">
             <Inp type="email" value={organization.email} onChange={(value) => update('email', value)} />
           </Field>
           <Field label="Telefone">
-            <Inp value={organization.phone} onChange={(value) => update('phone', value)} placeholder="(00) 00000-0000" />
+            <Inp value={organization.phone} onChange={(value) => update('phone', formatPhone(value))} placeholder="(00) 00000-0000" />
           </Field>
         </div>
 

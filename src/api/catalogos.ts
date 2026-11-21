@@ -1,4 +1,5 @@
-import { api, IS_MOCK } from './client'
+import { api, shouldUseMock } from './client'
+import { normalizeText } from '../utils'
 
 export interface CatalogItem {
   id: number
@@ -25,25 +26,28 @@ const mockTags: CatalogItem[] = [
 ]
 
 export async function listarStatus(): Promise<CatalogItem[]> {
-  if (IS_MOCK) return structuredClone(mockStatus)
+  if (shouldUseMock()) return structuredClone(mockStatus)
   const { data } = await api.get<CatalogItem[]>('/status')
+  const allowed = new Set(['planejada', 'em andamento', 'concluída', 'bloqueada'])
   return data
+    .map((item) => ({ ...item, nome: normalizeText(item.nome) }))
+    .filter((item) => allowed.has(item.nome.toLocaleLowerCase('pt-BR')))
 }
 
 export async function listarPrioridades(): Promise<CatalogItem[]> {
-  if (IS_MOCK) return structuredClone(mockPriorities)
+  if (shouldUseMock()) return structuredClone(mockPriorities)
   const { data } = await api.get<CatalogItem[]>('/prioridades')
   return data
 }
 
 export async function listarTags(): Promise<CatalogItem[]> {
-  if (IS_MOCK) return structuredClone(mockTags)
+  if (shouldUseMock()) return structuredClone(mockTags)
   const { data } = await api.get<CatalogItem[]>('/tags')
   return data
 }
 
 export async function criarTag(nome: string): Promise<CatalogItem> {
-  if (IS_MOCK) {
+  if (shouldUseMock()) {
     const normalized = nome.trim()
     return { id: Date.now(), nome: normalized }
   }
@@ -52,13 +56,13 @@ export async function criarTag(nome: string): Promise<CatalogItem> {
 }
 
 export async function listarTagsDaTarefa(tarefaId: string | number): Promise<number[]> {
-  if (IS_MOCK) return []
+  if (shouldUseMock()) return []
   const { data } = await api.get<number[]>(`/tarefas/${tarefaId}/tags`)
   return data
 }
 
 export async function listarPerfis(): Promise<CatalogItem[]> {
-  if (IS_MOCK) {
+  if (shouldUseMock()) {
     return [
       { id: 1, nome: 'Admin' },
       { id: 2, nome: 'Colaborador' },

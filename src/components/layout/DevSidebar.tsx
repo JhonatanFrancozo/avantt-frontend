@@ -1,9 +1,10 @@
 import { c } from '../../theme'
-import { DEV_NAV_ITEMS, DEV_CURRENT_USER } from '../../constants'
+import { DEV_NAV_ITEMS } from '../../constants'
 import Avatar from '../atoms/Avatar'
 import BtnPrimary from '../atoms/BtnPrimary'
 import NavIcon from '../NavIcon'
 import type { DevPage, Project, SessionUser } from '../../types'
+import { isDemoMode } from '../../api/client'
 
 interface Props {
   active: DevPage
@@ -15,6 +16,7 @@ interface Props {
 }
 
 export default function DevSidebar({ active, onNav, projects, onLogout, user, onProfile }: Props) {
+  const demoMode = isDemoMode()
   return (
     <aside style={{ width: 220, minWidth: 220, backgroundColor: c.sidebar, display: 'flex', flexDirection: 'column', height: '100vh', position: 'sticky', top: 0, borderRight: `1px solid ${c.border}`, transition: 'background-color 0.3s' }}>
       <div style={{ padding: '24px 20px 20px', borderBottom: `1px solid ${c.border}` }}>
@@ -25,6 +27,11 @@ export default function DevSidebar({ active, onNav, projects, onLogout, user, on
             <div style={{ fontSize: 10, color: c.textOnDarkMuted, marginTop: 1 }}>Gestão de TI</div>
           </div>
         </div>
+        {demoMode && (
+          <div style={{ marginTop: 14, borderRadius: 8, border: '1px solid rgba(75,123,245,0.35)', backgroundColor: 'rgba(75,123,245,0.12)', padding: '8px 10px', color: '#AFC2FF', fontSize: 11, fontWeight: 700, textAlign: 'center' }}>
+            Modo demonstração
+          </div>
+        )}
       </div>
 
       <nav style={{ padding: '12px 10px', flex: 1, overflowY: 'auto' }}>
@@ -48,23 +55,36 @@ export default function DevSidebar({ active, onNav, projects, onLogout, user, on
       </nav>
 
       <div style={{ padding: '14px 16px', borderTop: `1px solid ${c.border}` }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <BtnPrimary variant="ghost" compact fullWidth onClick={onProfile} ariaLabel="Abrir meu perfil">
-            <span style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', minWidth: 0, padding: '4px 0', textAlign: 'left' }}>
-              <Avatar i={user?.avatar ?? DEV_CURRENT_USER.avatar} color={user?.color ?? DEV_CURRENT_USER.color} size={32} />
-              <span style={{ flex: 1, minWidth: 0 }}>
-                <span style={{ display: 'block', fontSize: 12, fontWeight: 600, color: c.textOnDark, overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.name ?? DEV_CURRENT_USER.name}</span>
-                <span style={{ display: 'block', fontSize: 11, color: c.textOnDarkMuted }}>{DEV_CURRENT_USER.role}</span>
-              </span>
-            </span>
-          </BtnPrimary>
-          <button onClick={onLogout} title="Sair" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, borderRadius: 4, color: c.textOnDarkMuted, display: 'flex', alignItems: 'center', flexShrink: 0 }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        {demoMode && (
+          <button
+            onClick={onLogout}
+            style={{ width: '100%', marginBottom: 10, border: '1px solid #4B7BF5', borderRadius: 8, backgroundColor: '#4B7BF5', color: '#fff', cursor: 'pointer', padding: '10px 12px', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+          >
+            Sair da demonstração
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
               <polyline points="16 17 21 12 16 7" />
               <line x1="21" y1="12" x2="9" y2="12" />
             </svg>
           </button>
+        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <BtnPrimary variant="ghost" compact fullWidth onClick={onProfile} ariaLabel="Abrir meu perfil">
+            <span style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', minWidth: 0, padding: '4px 0', textAlign: 'left' }}>
+              <Avatar i={user?.avatar ?? ''} color={user?.color ?? '#4B7BF5'} size={32} />
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ display: 'block', fontSize: 12, fontWeight: 600, color: c.textOnDark, overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.name ?? 'Desenvolvedor'}</span>
+                <span style={{ display: 'block', fontSize: 11, color: c.textOnDarkMuted }}>Desenvolvedor</span>
+              </span>
+            </span>
+          </BtnPrimary>
+          {!demoMode && <button onClick={onLogout} title="Sair" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, borderRadius: 4, color: c.textOnDarkMuted, display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+          </button>}
         </div>
       </div>
     </aside>
