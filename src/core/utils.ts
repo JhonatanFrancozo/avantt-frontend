@@ -3,12 +3,19 @@ import { c } from './theme'
 
 export function fmtDateShort(d: string) {
   if (!d) return '—'
-  return new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
+  return new Date(`${d.slice(0, 10)}T12:00:00`).toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+  })
 }
 
 export function fmtDate(d: string) {
   if (!d) return '—'
-  return new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })
+  return new Date(`${d.slice(0, 10)}T12:00:00`).toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  })
 }
 
 export const TODAY_STR = new Date().toLocaleDateString('pt-BR', {

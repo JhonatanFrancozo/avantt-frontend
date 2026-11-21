@@ -27,7 +27,7 @@ export default function EditMemberProjectsModal({ member, projects, onClose, onS
         projects: projList,
         projectIds: projects
           .filter((project) => projList.includes(project.name))
-          .map((project) => Number(project.id)),
+          .map((project) => String(project.id)),
       })}
       submitLabel="Salvar"
     >

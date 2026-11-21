@@ -4,13 +4,14 @@ import { BtnPrimary } from '../components/atoms'
 import { Field, Inp } from '../components/form'
 import { DataState } from '../components/layout'
 import type { Organization } from '../types'
-import { formatPhone } from '../utils'
+import { formatCnpj, formatPhone } from '../utils'
 
 const emptyOrganization: Organization = {
   id: 0,
   tradeName: '',
   legalName: '',
   cnpj: '',
+  contact: '',
   email: '',
   phone: '',
 }
@@ -26,7 +27,15 @@ export default function OrganizationPage() {
     setLoading(true)
     setError(null)
     try {
-      setOrganization(await api.organizacoes.obterMinhaOrganizacao())
+      const loaded = await api.organizacoes.obterMinhaOrganizacao()
+      const creator = api.auth.loadSession()?.user
+      setOrganization({
+        ...loaded,
+        cnpj: formatCnpj(loaded.cnpj),
+        contact: loaded.contact || creator?.name || '',
+        email: loaded.email || creator?.email || '',
+        phone: formatPhone(loaded.phone),
+      })
     } catch (requestError) {
       setError(api.getApiErrorMessage(requestError))
     } finally {
@@ -47,7 +56,12 @@ export default function OrganizationPage() {
     setSaving(true)
     setError(null)
     try {
-      setOrganization(await api.organizacoes.atualizarOrganizacao(organization))
+      const updated = await api.organizacoes.atualizarOrganizacao(organization)
+      setOrganization({
+        ...updated,
+        cnpj: formatCnpj(updated.cnpj),
+        phone: formatPhone(updated.phone),
+      })
       setSaved(true)
     } catch (requestError) {
       setError(api.getApiErrorMessage(requestError))
@@ -82,13 +96,16 @@ export default function OrganizationPage() {
             <Inp value={organization.legalName} onChange={(value) => update('legalName', value)} />
           </Field>
           <Field label="CNPJ">
-            <Inp value={organization.cnpj} onChange={(value) => update('cnpj', value)} placeholder="00.000.000/0000-00" />
+            <Inp value={organization.cnpj} onChange={(value) => update('cnpj', formatCnpj(value))} placeholder="00.000.000/0000-00" />
+          </Field>
+          <Field label="Pessoa de contato">
+            <Inp value={organization.contact} onChange={(value) => update('contact', value)} />
           </Field>
           <Field label="E-mail">
             <Inp type="email" value={organization.email} onChange={(value) => update('email', value)} />
           </Field>
           <Field label="Telefone">
-            <Inp value={organization.phone} onChange={(value) => update('phone', formatPhone(value))} placeholder="(00) 00000-0000" />
+            <Inp type="tel" value={organization.phone} onChange={(value) => update('phone', formatPhone(value))} placeholder="(00) 00000-0000" />
           </Field>
         </div>
 

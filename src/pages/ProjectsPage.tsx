@@ -9,12 +9,10 @@ import { EmptyState } from '../components/layout'
 interface Props {
   projects: Project[]
   members: Member[]
-  onCreateProject: () => void
-  canCreate?: boolean
   onEditProject?: (project: Project) => void
 }
 
-export default function ProjectsPage({ projects, members, onCreateProject, canCreate = true, onEditProject }: Props) {
+export default function ProjectsPage({ projects, members, onEditProject }: Props) {
   const [selected, setSelected] = useState<string | null>(null)
 
   return (
@@ -24,7 +22,6 @@ export default function ProjectsPage({ projects, members, onCreateProject, canCr
           <div style={{ fontSize: 14, fontWeight: 600, color: c.textPrimary }}>{projects.length} projetos</div>
           <div style={{ fontSize: 11, color: c.textMuted, marginTop: 1 }}>Clique em um projeto para ver detalhes</div>
         </div>
-        {/* Botão de criação movido para o PageHeader para evitar duplicação */}
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(310px, 1fr))', gap: 16 }}>
@@ -32,8 +29,6 @@ export default function ProjectsPage({ projects, members, onCreateProject, canCr
           <EmptyState
             title="Nenhum projeto cadastrado"
             description="Crie o primeiro projeto para começar a organizar sprints, tarefas e equipe."
-            actionLabel={canCreate ? 'Criar projeto' : undefined}
-            onAction={canCreate ? onCreateProject : undefined}
           />
         )}
         {projects.map((p) => {
@@ -90,48 +85,49 @@ export default function ProjectsPage({ projects, members, onCreateProject, canCr
       {selected && (() => {
         const proj = projects.find((p) => p.id === selected)
         if (!proj) return null
-      return (
-        <div style={{ backgroundColor: c.surface, border: `1px solid ${c.border}`, borderRadius: 12, overflow: 'hidden', transition: 'background-color 0.3s' }}>
-          <div style={{ height: 4, backgroundColor: proj.color }} />
-          <div style={{ padding: '24px 28px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32 }}>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: c.textPrimary, marginBottom: 10 }}>Informações do projeto</div>
-              <div style={{ display: 'grid', gap: 8, fontSize: 13 }}>
-                <div><strong style={{ color: c.textMuted, fontSize: 11 }}>Cliente: </strong><span style={{ color: proj.color, fontWeight: 700, marginLeft: 8 }}>{proj.clientName ?? 'Nenhum cliente associado'}</span></div>
-                <div><strong style={{ color: c.textMuted, fontSize: 11 }}>Status: </strong><span style={{ marginLeft: 8, color: c.textPrimary, fontWeight: 600 }}>{proj.status}</span></div>
-                <div><strong style={{ color: c.textMuted, fontSize: 11 }}>Período: </strong><span style={{ marginLeft: 8, color: c.textPrimary }}>{fmtDate(proj.startDate)} → {fmtDate(proj.endDate)}</span></div>
-                <div style={{ marginTop: 8 }}><strong style={{ color: c.textMuted, fontSize: 11 }}>Descrição</strong>
-                  <div style={{ marginTop: 6, color: c.textSecondary, fontSize: 12 }}>{proj.description || 'Sem descrição'}</div>
+        return (
+          <div style={{ backgroundColor: c.surface, border: `1px solid ${c.border}`, borderRadius: 12, overflow: 'hidden', transition: 'background-color 0.3s' }}>
+            <div style={{ height: 4, backgroundColor: proj.color }} />
+            <div style={{ padding: '24px 28px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32 }}>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: c.textPrimary, marginBottom: 10 }}>Informações do projeto</div>
+                <div style={{ display: 'grid', gap: 8, fontSize: 13 }}>
+                  <div><strong style={{ color: c.textMuted, fontSize: 11 }}>Cliente: </strong><span style={{ color: proj.color, fontWeight: 700, marginLeft: 8 }}>{proj.clientName ?? 'Nenhum cliente associado'}</span></div>
+                  <div><strong style={{ color: c.textMuted, fontSize: 11 }}>Status: </strong><span style={{ marginLeft: 8, color: c.textPrimary, fontWeight: 600 }}>{proj.status}</span></div>
+                  <div><strong style={{ color: c.textMuted, fontSize: 11 }}>Período: </strong><span style={{ marginLeft: 8, color: c.textPrimary }}>{fmtDate(proj.startDate)} → {fmtDate(proj.endDate)}</span></div>
+                  <div style={{ marginTop: 8 }}><strong style={{ color: c.textMuted, fontSize: 11 }}>Descrição</strong>
+                    <div style={{ marginTop: 6, color: c.textSecondary, fontSize: 12 }}>{proj.description || 'Sem descrição'}</div>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: c.textPrimary, marginBottom: 10 }}>Equipe</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                  {proj.team.map((name) => {
+                    const member = members.find((item) => item.name === name)
+                    return member
+                      ? <Avatar key={name} i={member.avatar} color={member.color} size={34} />
+                      : <Avatar key={name} i={mkInitials(name)} color="#9AA3B2" size={34} />
+                  })}
+                  {proj.team.length === 0 && <div style={{ fontSize: 12, color: c.textMuted }}>Sem equipe definida</div>}
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: c.textPrimary, marginBottom: 8 }}>Resumo de tarefas</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8 }}>
+                  {[
+                    { label: 'Concluídas', v: proj.tasks.done, col: c.green, bg: c.greenLight },
+                    { label: 'Atrasadas', v: proj.tasks.delayed, col: c.amber, bg: c.amberLight },
+                    { label: 'Bloqueadas', v: proj.tasks.blocked, col: c.red, bg: c.redLight },
+                  ].map((stat) => (
+                    <div key={stat.label} style={{ textAlign: 'center', backgroundColor: stat.bg, borderRadius: 8, padding: '10px 6px' }}>
+                      <div style={{ fontWeight: 700, fontSize: 18, color: stat.col, fontFamily: 'var(--font-mono)' }}>{stat.v}</div>
+                      <div style={{ fontSize: 10, color: c.textMuted, marginTop: 2 }}>{stat.label}</div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: c.textPrimary, marginBottom: 10 }}>Equipe</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                {proj.team.map((name) => {
-                  const m = members.find((x) => x.name === name)
-                  return m ? <Avatar key={name} i={m.avatar} color={m.color} size={34} /> : <Avatar key={name} i={mkInitials(name)} color="#9AA3B2" size={34} />
-                })}
-                {proj.team.length === 0 && <div style={{ fontSize: 12, color: c.textMuted }}>Sem equipe definida</div>}
-              </div>
-
-              <div style={{ fontSize: 13, fontWeight: 700, color: c.textPrimary, marginBottom: 8 }}>Resumo de tarefas</div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8 }}>
-                {[
-                  { label: 'Concluídas', v: proj.tasks.done, col: c.green, bg: c.greenLight },
-                  { label: 'Atrasadas', v: proj.tasks.delayed, col: c.amber, bg: c.amberLight },
-                  { label: 'Bloqueadas', v: proj.tasks.blocked, col: c.red, bg: c.redLight },
-                ].map((s) => (
-                  <div key={s.label} style={{ textAlign: 'center', backgroundColor: s.bg, borderRadius: 8, padding: '10px 6px' }}>
-                    <div style={{ fontWeight: 700, fontSize: 18, color: s.col, fontFamily: 'var(--font-mono)' }}>{s.v}</div>
-                    <div style={{ fontSize: 10, color: c.textMuted, marginTop: 2 }}>{s.label}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
-        </div>
-      )
+        )
       })()}
     </div>
   )
