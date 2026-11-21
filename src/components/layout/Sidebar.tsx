@@ -4,6 +4,7 @@ import Avatar from '../atoms/Avatar'
 import BtnPrimary from '../atoms/BtnPrimary'
 import NavIcon from '../NavIcon'
 import type { Page, Project, SessionUser } from '../../types'
+import { isDemoMode } from '../../api/client'
 
 interface Props {
   active: Page
@@ -15,6 +16,7 @@ interface Props {
 }
 
 export default function Sidebar({ active, onNav, projects, onLogout, user, onProfile }: Props) {
+  const demoMode = isDemoMode()
   const navItems = user?.projectIds
     ? NAV_ITEMS.filter((item) => item.page !== 'clients' && item.page !== 'organization')
     : NAV_ITEMS
@@ -29,6 +31,11 @@ export default function Sidebar({ active, onNav, projects, onLogout, user, onPro
             <div style={{ fontSize: 10, color: c.textOnDarkMuted, marginTop: 1 }}>Gestão de TI</div>
           </div>
         </div>
+        {demoMode && (
+          <div style={{ marginTop: 14, borderRadius: 8, border: '1px solid rgba(75,123,245,0.35)', backgroundColor: 'rgba(75,123,245,0.12)', padding: '8px 10px', color: '#AFC2FF', fontSize: 11, fontWeight: 700, textAlign: 'center' }}>
+            Modo demonstração
+          </div>
+        )}
       </div>
 
       <nav style={{ padding: '12px 10px', flex: 1 }}>
@@ -52,6 +59,19 @@ export default function Sidebar({ active, onNav, projects, onLogout, user, onPro
       </nav>
 
       <div style={{ padding: '14px 16px', borderTop: `1px solid ${c.border}` }}>
+        {demoMode && (
+          <button
+            onClick={onLogout}
+            style={{ width: '100%', marginBottom: 10, border: '1px solid #4B7BF5', borderRadius: 8, backgroundColor: '#4B7BF5', color: '#fff', cursor: 'pointer', padding: '10px 12px', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+          >
+            Sair da demonstração
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+          </button>
+        )}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <BtnPrimary variant="ghost" compact fullWidth onClick={onProfile} ariaLabel="Abrir meu perfil">
             <span style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', minWidth: 0, padding: '4px 0', textAlign: 'left' }}>
@@ -62,7 +82,7 @@ export default function Sidebar({ active, onNav, projects, onLogout, user, onPro
               </span>
             </span>
           </BtnPrimary>
-          <button
+          {!demoMode && <button
             onClick={onLogout}
             title="Sair"
             style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, borderRadius: 4, color: c.textOnDarkMuted, display: 'flex', alignItems: 'center', flexShrink: 0 }}
@@ -72,7 +92,7 @@ export default function Sidebar({ active, onNav, projects, onLogout, user, onPro
               <polyline points="16 17 21 12 16 7" />
               <line x1="21" y1="12" x2="9" y2="12" />
             </svg>
-          </button>
+          </button>}
         </div>
       </div>
     </aside>

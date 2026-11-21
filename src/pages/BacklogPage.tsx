@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { c, STATUS_META, STATUS_OPTIONS, PRIORITY_META } from '../theme'
-import { Avatar, Badge, PriorityDot, BtnPrimary, TagPill } from '../components/atoms'
+import { Avatar, Badge, PriorityDot, TagPill } from '../components/atoms'
 import ProgressBar from '../components/atoms/ProgressBar'
 import { fmtDateShort, delayColor } from '../utils'
 import { PRIORITY_ORDER } from '../constants'
@@ -81,11 +81,12 @@ interface Props {
   projects: Project[]
   members: Member[]
   onCreateTask: () => void
+  onUpdateTask: (task: Task) => Promise<void>
+  onUpdateTaskStatus: (id: string, status: TaskStatus) => Promise<void>
   canCreate?: boolean
 }
 
-export default function BacklogPage({ tasks: initialTasks, projects, members: _members, onCreateTask, canCreate = true }: Props) {
-  const [tasks, setTasks] = useState(initialTasks)
+export default function BacklogPage({ tasks, projects, members: _members, onCreateTask, onUpdateTask, onUpdateTaskStatus, canCreate = true }: Props) {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const [view, setView] = useState<'list' | 'kanban'>('list')
   const [filterStatus, setFilterStatus] = useState<TaskStatus | ''>('')
@@ -96,6 +97,16 @@ export default function BacklogPage({ tasks: initialTasks, projects, members: _m
   const [search, setSearch] = useState('')
   const [sortCol, setSortCol] = useState<'id' | 'daysDelayed' | 'plannedEnd' | 'priority'>('plannedEnd')
   const [sortDir, setSortDir] = useState<1 | -1>(1)
+
+  async function saveTask(updated: Task) {
+    await onUpdateTask(updated)
+    setSelectedTask(null)
+  }
+
+  async function updateTaskStatus(updated: Task) {
+    await onUpdateTaskStatus(updated.id, updated.status)
+    setSelectedTask(null)
+  }
 
   const sprints = useMemo(() => [...new Set(tasks.map((t) => t.sprint))].sort(), [tasks])
   const assignees = useMemo(() => [...new Set(tasks.map((t) => t.assignee))].sort(), [tasks])
@@ -161,7 +172,7 @@ export default function BacklogPage({ tasks: initialTasks, projects, members: _m
               </button>
             ))}
           </div>
-          {canCreate && <BtnPrimary onClick={onCreateTask}>＋ Nova Tarefa</BtnPrimary>}
+          {/* O botão de criação está no PageHeader; removido daqui para evitar duplicação */}
         </div>
       </div>
 
@@ -273,10 +284,8 @@ export default function BacklogPage({ tasks: initialTasks, projects, members: _m
         <TaskDetailModal
           task={selectedTask}
           onClose={() => setSelectedTask(null)}
-          onSave={(updated) => {
-            setTasks((ts) => ts.map((t) => t.id === updated.id ? updated : t))
-            setSelectedTask(null)
-          }}
+          onSave={saveTask}
+          onStatusChange={updateTaskStatus}
         />
       )}
     </div>

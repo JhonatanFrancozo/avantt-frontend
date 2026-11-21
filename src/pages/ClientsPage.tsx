@@ -13,13 +13,6 @@ const emptyClient: ClientInput = {
   document: '',
   email: '',
   phone: '',
-  defaultUser: {
-    name: '',
-    email: '',
-    status: 'invite-pending',
-    role: 'manager',
-    projectIds: [],
-  },
 }
 
 function formatDocument(value: string) {
@@ -40,39 +33,22 @@ function ClientModal({
   client,
   onClose,
   onSave,
-  projects,
 }: {
   client?: Client
   onClose: () => void
   onSave: (body: ClientInput) => Promise<void>
-  projects: Project[]
 }) {
   const [form, setForm] = useState<ClientInput>(client ? {
     name: client.name,
-    document: client.document,
-    email: client.email,
-    phone: client.phone,
-    defaultUser: client.defaultUser ?? {
-      name: '',
-      email: client.email,
-      status: 'invite-pending',
-      role: 'manager',
-      projectIds: [],
-    },
+    document: client.document ?? '',
+    email: client.email ?? '',
+    phone: client.phone ?? '',
   } : emptyClient)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
-  const [projectIds, setProjectIds] = useState<string[]>(client?.defaultUser?.projectIds ?? [])
 
   function update(field: keyof ClientInput, value: string) {
     setForm((current) => ({ ...current, [field]: value }))
-  }
-
-  function updateUser(field: 'name' | 'email', value: string) {
-    setForm((current) => ({
-      ...current,
-      defaultUser: { ...current.defaultUser!, [field]: value },
-    }))
   }
 
   async function submit() {
@@ -80,29 +56,17 @@ function ClientModal({
       setError('Informe o nome do cliente.')
       return
     }
-    if (!form.defaultUser?.email.trim()) {
-      setError('Informe o e-mail do gestor da empresa cliente.')
-      return
-    }
-    if (form.defaultUser?.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.defaultUser.email)) {
-      setError('Informe um e-mail válido para o gestor do cliente.')
+    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      setError('Informe um e-mail de contato válido.')
       return
     }
     setSaving(true)
     setError('')
     try {
-      await onSave({
-        ...form,
-        email: form.defaultUser.email,
-        defaultUser: form.defaultUser?.email ? {
-          ...form.defaultUser,
-          role: 'manager',
-          status: 'invite-pending',
-          projectIds,
-        } : undefined,
-      })
+      await onSave({ ...form, name: form.name.trim() })
     } catch (requestError) {
       setError(api.getApiErrorMessage(requestError))
+    } finally {
       setSaving(false)
     }
   }
@@ -112,34 +76,21 @@ function ClientModal({
       title={client ? 'Editar cliente' : 'Cadastrar cliente'}
       onClose={onClose}
       onSubmit={submit}
-      submitLabel={saving ? 'Salvando...' : client ? 'Salvar' : 'Cadastrar e convidar'}
-      wide
+      submitLabel={saving ? 'Salvando...' : client ? 'Salvar alterações' : 'Cadastrar cliente'}
     >
-      <div className="grid gap-6 md:grid-cols-2">
-        <div className="space-y-4">
-          <div className="text-sm font-semibold text-text-primary">Empresa cliente</div>
-          <Field label="Nome" required>
-            <Inp value={form.name} onChange={(value) => update('name', value)} placeholder="Nome da empresa cliente" />
-          </Field>
-          <Field label="CNPJ ou documento">
-            <Inp value={form.document} onChange={(value) => update('document', formatDocument(value))} placeholder="00.000.000/0000-00" />
-          </Field>
-          <Field label="E-mail do gestor para convite" required>
-            <Inp type="email" value={form.defaultUser?.email ?? ''} onChange={(value) => updateUser('email', value)} placeholder="gestor@empresa.com" />
-          </Field>
-          <Field label="Telefone">
-            <Inp value={form.phone} onChange={(value) => update('phone', formatPhone(value))} placeholder="(00) 00000-0000" />
-          </Field>
-        </div>
-        <div className="space-y-4 rounded-xl border border-border bg-bg p-5">
-          <div>
-            <div className="text-sm font-semibold text-text-primary">Convite do gestor</div>
-            <p className="mt-1 text-xs leading-5 text-text-muted">O gestor preencherá os próprios dados e definirá a senha pelo link enviado ao e-mail informado.</p>
-          </div>
-          <div className="rounded-lg border border-blue/20 bg-blue-light p-3 text-xs leading-5 text-blue">
-            O acesso será limitado à empresa cliente e o convite ficará pendente até a aceitação.
-          </div>
-        </div>
+      <div className="space-y-4">
+        <Field label="Nome do cliente" required>
+          <Inp value={form.name} onChange={(value) => update('name', value)} placeholder="Nome da empresa cliente" />
+        </Field>
+        <Field label="CNPJ ou documento">
+          <Inp value={form.document ?? ''} onChange={(value) => update('document', formatDocument(value))} placeholder="00.000.000/0000-00" />
+        </Field>
+        <Field label="E-mail de contato">
+          <Inp type="email" value={form.email ?? ''} onChange={(value) => update('email', value)} placeholder="contato@empresa.com" />
+        </Field>
+        <Field label="Telefone">
+          <Inp value={form.phone ?? ''} onChange={(value) => update('phone', formatPhone(value))} placeholder="(00) 00000-0000" />
+        </Field>
       </div>
       {error && <div role="alert" className="mt-5 rounded-lg bg-red-light p-3 text-sm text-red">{error}</div>}
     </Modal>
@@ -198,7 +149,7 @@ export default function ClientsPage({ projects }: { projects: Project[] }) {
         {clients.length === 0 && (
           <EmptyState
             title="Nenhum cliente cadastrado"
-            description="Cadastre uma empresa cliente e, se necessário, envie o acesso para o contato responsável."
+            description="Cadastre clientes como registros comerciais, sem criar contas de usuário."
             actionLabel="Cadastrar cliente"
             onAction={() => setCreating(true)}
           />
@@ -217,25 +168,18 @@ export default function ClientsPage({ projects }: { projects: Project[] }) {
               <div>{client.email || 'E-mail não informado'}</div>
               <div>{client.phone || 'Telefone não informado'}</div>
             </div>
-            {client.defaultUser?.email && (
-              <div className="mt-4 rounded-lg bg-bg p-3">
-                <div className="text-xs font-semibold text-text-primary">{client.defaultUser.name}</div>
-                <div className="mt-1 text-xs text-text-muted">{client.defaultUser.email}</div>
-                <div className="mt-2 text-xs font-semibold text-blue">Gestor</div>
-                <div className="mt-1 text-xs text-text-muted">
-                  {client.defaultUser.projectIds?.length ?? 0} projeto{client.defaultUser.projectIds?.length === 1 ? '' : 's'} permitido{client.defaultUser.projectIds?.length === 1 ? '' : 's'}
-                </div>
-                <div className="mt-2 inline-flex rounded-full bg-amber-light px-2 py-1 text-xs font-medium text-amber">
-                  {client.defaultUser.status === 'active' ? 'Acesso ativo' : 'Convite pendente'}
-                </div>
+            <div className="mt-4 border-t border-border pt-4">
+              <div className="text-xs font-semibold text-text-primary">Projetos associados</div>
+              <div className="mt-2 text-xs text-text-muted">
+                {projects.filter((project) => Number(project.clientId) === client.id).map((project) => project.name).join(', ') || 'Nenhum projeto associado'}
               </div>
-            )}
+            </div>
           </div>
         ))}
       </div>
 
       {(creating || editing) && (
-        <ClientModal projects={projects} client={editing ?? undefined} onClose={() => { setCreating(false); setEditing(null) }} onSave={save} />
+        <ClientModal client={editing ?? undefined} onClose={() => { setCreating(false); setEditing(null) }} onSave={save} />
       )}
     </div>
   )

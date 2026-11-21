@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { c } from '../theme'
-import { Avatar, BtnPrimary, StatCard } from '../components/atoms'
+import { Avatar, StatCard } from '../components/atoms'
 import ProgressBar from '../components/atoms/ProgressBar'
 import { workloadColor } from '../utils'
 import type { Member, Project } from '../types'
@@ -48,7 +48,7 @@ export default function TeamPage({ members, projects, onAddMember, canManage = t
             <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: c.textPrimary }}>{filtered.length}</span> membro{filtered.length !== 1 ? 's' : ''}
           </div>
         </div>
-        {canManage && <BtnPrimary onClick={onAddMember}>＋ Adicionar Membro</BtnPrimary>}
+        {/* Botão de vincular membro centralizado no PageHeader; removido aqui para evitar duplicação */}
       </div>
 
       <div style={{ display: 'flex', gap: 12 }}>

@@ -57,8 +57,8 @@ export default function ProfileModal({
     try {
       const updated = await api.usuarios.atualizarMeuPerfil({
         email: email.trim().toLowerCase(),
-        cpf: cpf || undefined,
-        telefone: phone || undefined,
+        cpf,
+        telefone: phone,
       })
       if (newPassword) {
         await api.usuarios.alterarMinhaSenha({ senhaAtual: currentPassword, novaSenha: newPassword })

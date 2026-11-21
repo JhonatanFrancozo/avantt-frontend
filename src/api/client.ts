@@ -2,10 +2,23 @@ import axios from 'axios'
 import type { AxiosError } from 'axios'
 
 /**
- * Flip para false (ou defina VITE_USE_MOCK=false no .env) para usar a API real.
- * Quando true, todas as chamadas usam os handlers mock em ./mock/db.ts.
+ * O modo real é o padrão. Mockagem global só existe quando habilitada
+ * explicitamente por ambiente; a demonstração usa um estado separado.
  */
-export const IS_MOCK = import.meta.env.VITE_USE_MOCK !== 'false'
+export const IS_MOCK = import.meta.env.VITE_USE_MOCK === 'true'
+
+export function isDemoMode() {
+  try {
+    const raw = localStorage.getItem(SESSION_KEY) ?? sessionStorage.getItem(SESSION_KEY)
+    return Boolean(raw && JSON.parse(raw).token?.startsWith('demo-'))
+  } catch {
+    return false
+  }
+}
+
+export function shouldUseMock() {
+  return IS_MOCK || isDemoMode()
+}
 
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL ?? '/api',
@@ -33,7 +46,12 @@ api.interceptors.response.use(
   (res) => res,
   (err) => {
     console.error('[API]', err?.response?.status, err?.config?.url)
-    if (err?.response?.status === 401) {
+    const url = String(err?.config?.url ?? '')
+    const isAuthRequest = url.includes('/auth/login')
+      || url.includes('/auth/register')
+      || url.includes('/auth/register-organizacao')
+      || url.includes('/auth/convite/aceitar')
+    if (err?.response?.status === 401 && !isAuthRequest) {
       localStorage.removeItem(SESSION_KEY)
       sessionStorage.removeItem(SESSION_KEY)
       window.dispatchEvent(new Event('avantt:unauthorized'))

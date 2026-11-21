@@ -29,7 +29,7 @@ export const STATUS_META: Record<TaskStatus, { bg: string; text: string; label: 
   Concluída:      { bg: 'var(--color-green-light)', text: 'var(--color-green)', label: 'Concluída', dot: 'var(--color-green)' },
 }
 
-export const STATUS_OPTIONS: TaskStatus[] = ['Planejada', 'Em andamento', 'Bloqueada', 'Concluída']
+export const STATUS_OPTIONS: TaskStatus[] = ['Planejada', 'Em andamento', 'Concluída', 'Bloqueada']
 
 export const PRIORITY_META: Record<TaskPriority, { dot: string; label: string }> = {
   crítica: { dot: 'var(--color-red)', label: 'Crítica' },

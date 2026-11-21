@@ -102,6 +102,15 @@ export async function criarSprint(data: Omit<Sprint, 'id'>): Promise<Sprint> {
   return structuredClone(nova)
 }
 
+export async function atualizarSprint(id: number, data: Partial<Sprint>): Promise<Sprint> {
+  await delay()
+  const atual = _sprints.find((sprint) => sprint.id === id)
+  if (!atual) throw new Error(`Sprint ${id} não encontrada`)
+  const atualizada = { ...atual, ...data, id, project: atual.project, projectId: atual.projectId }
+  _sprints = _sprints.map((sprint) => sprint.id === id ? atualizada : sprint)
+  return structuredClone(atualizada)
+}
+
 export async function criarTarefa(data: Omit<Task, 'id'>): Promise<Task> {
   await delay()
   const nums = _tasks.map((t) => parseInt(t.id.replace('T-', ''), 10)).filter(Boolean)

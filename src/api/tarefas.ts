@@ -8,29 +8,38 @@
  *   sprintId   → tarefa.sprint_id
  *   status     → tarefa.status_id (nome)
  */
-import { api, IS_MOCK } from './client'
+import { api, shouldUseMock } from './client'
 import * as mock from './mock/db'
 import type { Task } from '../types'
+import { normalizeText } from '../utils'
+import { listarStatus } from './catalogos'
 
 type TaskResponse = Record<string, unknown>
 
 function normalizeStatus(value: unknown): Task['status'] {
-  const normalized = String(value ?? '').toLocaleLowerCase('pt-BR')
+  const normalized = normalizeText(value).toLocaleLowerCase('pt-BR')
   if (normalized === 'em andamento') return 'Em andamento'
   if (normalized === 'concluída' || normalized === 'concluida') return 'Concluída'
   if (normalized === 'bloqueada') return 'Bloqueada'
   return 'Planejada'
 }
 
+async function findStatusId(status: Task['status']): Promise<number> {
+  const statuses = await listarStatus()
+  const match = statuses.find((item) => normalizeStatus(item.nome) === status)
+  if (!match) throw new Error(`Status "${status}" não encontrado no catálogo.`)
+  return match.id
+}
+
 function normalizeTask(data: TaskResponse): Task {
   return {
     id: String(data.id),
-    title: String(data.title ?? data.titulo ?? ''),
-    project: String(data.project ?? ''),
+    title: normalizeText(data.title ?? data.titulo ?? ''),
+    project: normalizeText(data.project ?? ''),
     projectId: data.projectId ? Number(data.projectId) : undefined,
-    sprint: String(data.sprint ?? ''),
+    sprint: normalizeText(data.sprint ?? ''),
     sprintId: data.sprintId ? Number(data.sprintId) : undefined,
-    assignee: String(data.assignee ?? 'Não atribuído'),
+    assignee: normalizeText(data.assignee ?? 'Não atribuído'),
     assigneeId: data.assigneeId ? Number(data.assigneeId) : undefined,
     avatar: String(data.avatar ?? ''),
     avatarColor: String(data.avatarColor ?? '#4B7BF5'),
@@ -56,13 +65,13 @@ interface FiltrosTarefa {
 }
 
 export async function listarTarefas(filtros?: FiltrosTarefa): Promise<Task[]> {
-  if (IS_MOCK) return mock.listarTarefas(filtros)
+  if (shouldUseMock()) return mock.listarTarefas(filtros)
   const { data } = await api.get<TaskResponse[]>('/tarefas', { params: filtros })
   return data.map(normalizeTask)
 }
 
 export async function criarTarefa(body: Omit<Task, 'id'>): Promise<Task> {
-  if (IS_MOCK) return mock.criarTarefa(body)
+  if (shouldUseMock()) return mock.criarTarefa(body)
   const { data } = await api.post<TaskResponse>('/tarefas', {
     title: body.title,
     projectId: body.projectId,
@@ -80,14 +89,15 @@ export async function criarTarefa(body: Omit<Task, 'id'>): Promise<Task> {
 }
 
 export async function atualizarTarefa(id: string, body: Partial<Task>): Promise<Task> {
-  if (IS_MOCK) return mock.atualizarTarefa(id, body)
+  if (shouldUseMock()) return mock.atualizarTarefa(id, body)
   const numericId = String(id).replace(/\D/g, '')
+  const statusId = body.status ? await findStatusId(body.status) : body.statusId
   const { data } = await api.put<TaskResponse>(`/tarefas/${numericId}`, {
     title: body.title,
     projectId: body.projectId,
     sprintId: body.sprintId ?? null,
     assigneeId: body.assigneeId ?? null,
-    statusId: body.statusId,
+    statusId,
     prioridadeId: body.priorityId,
     priority: body.priority,
     plannedEnd: body.plannedEnd,
@@ -96,5 +106,13 @@ export async function atualizarTarefa(id: string, body: Partial<Task>): Promise<
     description: body.description,
     tagIds: body.tagIds ?? [],
   })
+  return normalizeTask(data)
+}
+
+export async function atualizarStatusTarefa(id: string, status: Task['status']): Promise<Task> {
+  if (shouldUseMock()) return mock.atualizarTarefa(id, { status })
+  const numericId = String(id).replace(/\D/g, '')
+  const statusId = await findStatusId(status)
+  const { data } = await api.patch<TaskResponse>(`/tarefas/${numericId}/status`, { statusId })
   return normalizeTask(data)
 }

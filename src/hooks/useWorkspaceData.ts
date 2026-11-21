@@ -20,13 +20,27 @@ export default function useWorkspaceData() {
     setLoading(true)
     setError(null)
     try {
+      async function optional<T>(request: Promise<T>): Promise<T | []> {
+        try {
+          return await request
+        } catch (requestError) {
+          const status = (requestError as { response?: { status?: number } })?.response?.status
+          if (status === 404 || status === 500) return []
+          throw requestError
+        }
+      }
       const [projects, tasks, sprints, members] = await Promise.all([
-        api.projetos.listarProjetos(),
-        api.tarefas.listarTarefas(),
-        api.sprints.listarSprints(),
-        api.usuarios.listarUsuarios(),
+        optional(api.projetos.listarProjetos()),
+        optional(api.tarefas.listarTarefas()),
+        optional(api.sprints.listarSprints()),
+        optional(api.usuarios.listarUsuarios()),
       ])
-      setData({ projects, tasks, sprints, members })
+      setData({
+        projects: projects as Project[],
+        tasks: tasks as Task[],
+        sprints: sprints as Sprint[],
+        members: members as Member[],
+      })
     } catch (requestError) {
       setError(api.getApiErrorMessage(requestError))
     } finally {

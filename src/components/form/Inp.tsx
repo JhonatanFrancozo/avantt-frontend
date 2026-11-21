@@ -9,9 +9,22 @@ interface Props {
   name?: string
   required?: boolean
   autoComplete?: string
+  inputMode?: 'none' | 'text' | 'tel' | 'url' | 'email' | 'numeric' | 'decimal' | 'search'
+  maxLength?: number
 }
 
-export default function Inp({ value, onChange, placeholder, type = 'text', id, name, required, autoComplete }: Props) {
+export default function Inp({
+  value,
+  onChange,
+  placeholder,
+  type = 'text',
+  id,
+  name,
+  required,
+  autoComplete,
+  inputMode,
+  maxLength,
+}: Props) {
   return (
     <input
       id={id}
@@ -20,6 +33,8 @@ export default function Inp({ value, onChange, placeholder, type = 'text', id, n
       value={value}
       required={required}
       autoComplete={autoComplete}
+      inputMode={inputMode}
+      maxLength={maxLength}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
       style={inputStyle}

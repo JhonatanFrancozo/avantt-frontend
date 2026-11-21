@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { c } from '../theme'
-import { Avatar, BtnPrimary } from '../components/atoms'
+import { Avatar } from '../components/atoms'
 import ProgressBar from '../components/atoms/ProgressBar'
 import { fmtDateShort, fmtDate, mkInitials } from '../utils'
 import type { Project, Member } from '../types'
@@ -24,7 +24,7 @@ export default function ProjectsPage({ projects, members, onCreateProject, canCr
           <div style={{ fontSize: 14, fontWeight: 600, color: c.textPrimary }}>{projects.length} projetos</div>
           <div style={{ fontSize: 11, color: c.textMuted, marginTop: 1 }}>Clique em um projeto para ver detalhes</div>
         </div>
-        {canCreate && <BtnPrimary onClick={onCreateProject}>＋ Novo Projeto</BtnPrimary>}
+        {/* Botão de criação movido para o PageHeader para evitar duplicação */}
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(310px, 1fr))', gap: 16 }}>
@@ -90,55 +90,48 @@ export default function ProjectsPage({ projects, members, onCreateProject, canCr
       {selected && (() => {
         const proj = projects.find((p) => p.id === selected)
         if (!proj) return null
-        return (
-          <div style={{ backgroundColor: c.surface, border: `1px solid ${c.border}`, borderRadius: 12, overflow: 'hidden', transition: 'background-color 0.3s' }}>
-            <div style={{ height: 4, backgroundColor: proj.color }} />
-            <div style={{ padding: '24px 28px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32 }}>
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: c.textPrimary, marginBottom: 14 }}>Marcos</div>
-                {proj.milestones.length === 0 && <div style={{ fontSize: 12, color: c.textMuted }}>Nenhum marco definido.</div>}
-                {proj.milestones.map((m, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
-                    <div style={{ width: 22, height: 22, borderRadius: '50%', backgroundColor: m.done ? proj.color + '22' : c.border, border: `2px solid ${m.done ? proj.color : c.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 11, color: m.done ? proj.color : c.textMuted }}>{m.done ? '✓' : '○'}</div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 13, fontWeight: 500, color: m.done ? c.textMuted : c.textPrimary, textDecoration: m.done ? 'line-through' : 'none' }}>{m.name}</div>
-                      <div style={{ fontSize: 11, color: c.textMuted }}>{fmtDate(m.date)}</div>
-                    </div>
-                    {!m.done && m.date && new Date(m.date) < new Date() && <span style={{ fontSize: 10, padding: '2px 6px', borderRadius: 4, backgroundColor: c.redLight, color: c.red, fontWeight: 600 }}>ATRASADO</span>}
-                  </div>
-                ))}
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: c.textPrimary, marginBottom: 10 }}>Riscos</div>
-                  {proj.risks.length === 0 && <div style={{ fontSize: 12, color: c.textMuted }}>Nenhum risco identificado.</div>}
-                  {proj.risks.map((r, i) => (
-                    <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', padding: '7px 10px', backgroundColor: c.amberLight, borderRadius: 7, borderLeft: `3px solid ${c.amber}`, fontSize: 12, color: c.textPrimary, marginBottom: 6, transition: 'background-color 0.3s' }}>
-                      <span style={{ color: c.amber }}>⚠</span>{r}
-                    </div>
-                  ))}
-                </div>
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: c.textPrimary, marginBottom: 10 }}>Distribuição de Tarefas</div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8 }}>
-                    {[
-                      { label: 'Concluídas', v: proj.tasks.done, col: c.green, bg: c.greenLight },
-                      { label: 'Atrasadas', v: proj.tasks.delayed, col: c.amber, bg: c.amberLight },
-                      { label: 'Bloqueadas', v: proj.tasks.blocked, col: c.red, bg: c.redLight },
-                      { label: 'Canceladas', v: proj.tasks.cancelled, col: c.textMuted, bg: c.border },
-                      { label: 'Total', v: proj.tasks.total, col: c.textPrimary, bg: c.bg },
-                    ].map((s) => (
-                      <div key={s.label} style={{ textAlign: 'center', backgroundColor: s.bg, borderRadius: 8, padding: '10px 6px', transition: 'background-color 0.3s' }}>
-                        <div style={{ fontWeight: 700, fontSize: 18, color: s.col, fontFamily: 'var(--font-mono)' }}>{s.v}</div>
-                        <div style={{ fontSize: 10, color: c.textMuted, marginTop: 2 }}>{s.label}</div>
-                      </div>
-                    ))}
-                  </div>
+      return (
+        <div style={{ backgroundColor: c.surface, border: `1px solid ${c.border}`, borderRadius: 12, overflow: 'hidden', transition: 'background-color 0.3s' }}>
+          <div style={{ height: 4, backgroundColor: proj.color }} />
+          <div style={{ padding: '24px 28px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32 }}>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: c.textPrimary, marginBottom: 10 }}>Informações do projeto</div>
+              <div style={{ display: 'grid', gap: 8, fontSize: 13 }}>
+                <div><strong style={{ color: c.textMuted, fontSize: 11 }}>Cliente: </strong><span style={{ color: proj.color, fontWeight: 700, marginLeft: 8 }}>{proj.clientName ?? 'Nenhum cliente associado'}</span></div>
+                <div><strong style={{ color: c.textMuted, fontSize: 11 }}>Status: </strong><span style={{ marginLeft: 8, color: c.textPrimary, fontWeight: 600 }}>{proj.status}</span></div>
+                <div><strong style={{ color: c.textMuted, fontSize: 11 }}>Período: </strong><span style={{ marginLeft: 8, color: c.textPrimary }}>{fmtDate(proj.startDate)} → {fmtDate(proj.endDate)}</span></div>
+                <div style={{ marginTop: 8 }}><strong style={{ color: c.textMuted, fontSize: 11 }}>Descrição</strong>
+                  <div style={{ marginTop: 6, color: c.textSecondary, fontSize: 12 }}>{proj.description || 'Sem descrição'}</div>
                 </div>
               </div>
             </div>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: c.textPrimary, marginBottom: 10 }}>Equipe</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                {proj.team.map((name) => {
+                  const m = members.find((x) => x.name === name)
+                  return m ? <Avatar key={name} i={m.avatar} color={m.color} size={34} /> : <Avatar key={name} i={mkInitials(name)} color="#9AA3B2" size={34} />
+                })}
+                {proj.team.length === 0 && <div style={{ fontSize: 12, color: c.textMuted }}>Sem equipe definida</div>}
+              </div>
+
+              <div style={{ fontSize: 13, fontWeight: 700, color: c.textPrimary, marginBottom: 8 }}>Resumo de tarefas</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8 }}>
+                {[
+                  { label: 'Concluídas', v: proj.tasks.done, col: c.green, bg: c.greenLight },
+                  { label: 'Atrasadas', v: proj.tasks.delayed, col: c.amber, bg: c.amberLight },
+                  { label: 'Bloqueadas', v: proj.tasks.blocked, col: c.red, bg: c.redLight },
+                ].map((s) => (
+                  <div key={s.label} style={{ textAlign: 'center', backgroundColor: s.bg, borderRadius: 8, padding: '10px 6px' }}>
+                    <div style={{ fontWeight: 700, fontSize: 18, color: s.col, fontFamily: 'var(--font-mono)' }}>{s.v}</div>
+                    <div style={{ fontSize: 10, color: c.textMuted, marginTop: 2 }}>{s.label}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
-        )
+        </div>
+      )
       })()}
     </div>
   )

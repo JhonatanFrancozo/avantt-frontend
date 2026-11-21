@@ -1,4 +1,4 @@
-import { api, IS_MOCK } from './client'
+import { api, shouldUseMock } from './client'
 
 export interface EstimateRequest {
   pessoas: number
@@ -23,7 +23,7 @@ export interface EstimateResponse {
 }
 
 export async function calcularEstimativa(request: EstimateRequest): Promise<EstimateResponse> {
-  if (IS_MOCK) {
+  if (shouldUseMock()) {
     const tempoEstimado = (request.sprints * request.quantidadeDiasSprint) / request.pessoas
     const prazoDias = request.prazo / 480
     return {

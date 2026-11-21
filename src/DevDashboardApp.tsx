@@ -11,7 +11,6 @@ import SprintsPage from './pages/SprintsPage'
 import ProjectsPage from './pages/ProjectsPage'
 import BacklogPage from './pages/BacklogPage'
 import ReportsPage from './pages/ReportsPage'
-import { DEV_CURRENT_USER } from './constants'
 import type { DevPage, SessionUser, Task } from './types'
 import useWorkspaceData from './hooks/useWorkspaceData'
 import { ProfileModal } from './modals'
@@ -27,8 +26,16 @@ const pageTitle: Record<DevPage, string> = {
 
 function SprintSelector({ options }: { options: string[] }) {
   const [open, setOpen] = useState(false)
-  const [selected, setSelected] = useState(options[0] ?? DEV_CURRENT_USER.sprint)
+  const [selected, setSelected] = useState(options[0] ?? '')
   const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (options.length === 0) {
+      setSelected('')
+    } else if (!options.includes(selected)) {
+      setSelected(options[0])
+    }
+  }, [options, selected])
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -45,7 +52,7 @@ function SprintSelector({ options }: { options: string[] }) {
         style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 12px', borderRadius: 20, border: `1px solid ${open ? '#4B7BF5' : c.border}`, backgroundColor: open ? 'rgba(75,123,245,0.06)' : c.surface, fontSize: 12, color: open ? '#4B7BF5' : c.textSecondary, cursor: 'pointer', transition: 'all 0.15s', fontFamily: 'var(--font-sans)' }}
       >
         <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M3 8h10M3 4h10M3 12h6"/></svg>
-        {selected}
+        {selected || 'Nenhuma sprint'}
         <svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M2 3.5l3 3 3-3"/></svg>
       </button>
       {open && (
@@ -59,7 +66,6 @@ function SprintSelector({ options }: { options: string[] }) {
               onMouseLeave={(e) => { if (selected !== sprint) (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent' }}
             >
               {sprint}
-              {sprint === DEV_CURRENT_USER.sprint && <span style={{ marginLeft: 6, fontSize: 10, color: '#37A066', fontWeight: 600 }}>atual</span>}
             </button>
           ))}
         </div>
@@ -82,13 +88,35 @@ export default function DevDashboardApp({
   const [profileOpen, setProfileOpen] = useState(false)
   const { projects, tasks, sprints, members, setData, loading, error, reload } = useWorkspaceData()
   const currentName = user?.name ?? DEV_CURRENT_USER.name
+  const developerProjects = useMemo(
+    () => projects.filter((project) =>
+      project.team?.some((name) => name.toLocaleLowerCase('pt-BR') === currentName.toLocaleLowerCase('pt-BR'))
+      || project.teamIds?.some((id) => String(id) === String(user?.id))),
+    [projects, currentName, user?.id],
+  )
+  const developerProjectNames = useMemo(
+    () => new Set(developerProjects.map((project) => project.name)),
+    [developerProjects],
+  )
   const developerTasks = useMemo(
-    () => tasks.filter((task) => task.assignee === currentName),
-    [currentName, tasks],
+    () => tasks.filter((task) =>
+      task.assignee.toLocaleLowerCase('pt-BR') === currentName.toLocaleLowerCase('pt-BR')
+      && (!task.project || developerProjectNames.has(task.project))),
+    [currentName, tasks, developerProjectNames],
+  )
+  const developerSprints = useMemo(
+    () => sprints.filter((sprint) => developerProjectNames.has(sprint.project)),
+    [sprints, developerProjectNames],
+  )
+  const developerMembers = useMemo(
+    () => members.filter((member) =>
+      member.name.toLocaleLowerCase('pt-BR') === currentName.toLocaleLowerCase('pt-BR')
+      || developerProjects.some((project) => project.team.includes(member.name))),
+    [members, currentName, developerProjects],
   )
   const sprintOptions = useMemo(
-    () => [...new Set(sprints.map((sprint) => sprint.name))],
-    [sprints],
+    () => [...new Set(developerSprints.map((sprint) => sprint.name))],
+    [developerSprints],
   )
 
   async function updateTask(updated: Task) {
@@ -99,11 +127,19 @@ export default function DevDashboardApp({
     }))
   }
 
+  async function updateTaskStatus(id: string, status: Task['status']) {
+    const saved = await api.tarefas.atualizarStatusTarefa(id, status)
+    setData((current) => ({
+      ...current,
+      tasks: current.tasks.map((task) => task.id === saved.id ? saved : task),
+    }))
+  }
+
   if (loading || error) return <DataState loading={loading} error={error} onRetry={reload} />
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: c.bg, transition: 'background-color 0.3s' }}>
-      <DevSidebar active={page} onNav={setPage} projects={projects} user={user} onProfile={user ? () => setProfileOpen(true) : undefined} onLogout={onLogout ?? (() => {})} />
+      <DevSidebar active={page} onNav={setPage} projects={developerProjects} user={user} onProfile={user ? () => setProfileOpen(true) : undefined} onLogout={onLogout ?? (() => {})} />
       <main style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <PageHeader
           title={pageTitle[page]}
@@ -116,12 +152,12 @@ export default function DevDashboardApp({
           <SprintSelector options={sprintOptions} />
         </PageHeader>
         <div style={{ flex: 1, overflowY: 'auto' }}>
-          {page === 'devoverview' && <DevOverviewPage tasks={developerTasks} projects={projects} />}
-          {page === 'mytasks' && <MyTasksPage tasks={developerTasks} projects={projects} onUpdateTask={updateTask} />}
-          {page === 'devsprints' && <SprintsPage sprints={sprints} projects={projects} members={members} onCreateSprint={() => {}} canCreate={false} />}
-          {page === 'devprojects' && <ProjectsPage projects={projects} members={members} onCreateProject={() => {}} canCreate={false} />}
-          {page === 'devbacklog' && <BacklogPage tasks={tasks} projects={projects} members={members} onCreateTask={() => {}} canCreate={false} />}
-          {page === 'devreports' && <ReportsPage tasks={tasks} projects={projects} members={members} sprints={sprints} />}
+          {page === 'devoverview' && <DevOverviewPage tasks={developerTasks} projects={developerProjects} sprints={developerSprints} onStartTask={(task) => updateTaskStatus(task.id, 'Em andamento')} />}
+          {page === 'mytasks' && <MyTasksPage tasks={developerTasks} projects={developerProjects} onUpdateTask={async (task) => { await updateTaskStatus(task.id, task.status) }} />}
+          {page === 'devsprints' && <SprintsPage sprints={developerSprints} projects={developerProjects} members={members} onCreateSprint={() => {}} canCreate={false} />}
+          {page === 'devprojects' && <ProjectsPage projects={developerProjects} members={members} onCreateProject={() => {}} canCreate={false} />}
+          {page === 'devbacklog' && <BacklogPage tasks={developerTasks} projects={developerProjects} members={members} onCreateTask={() => {}} onUpdateTask={updateTask} onUpdateTaskStatus={updateTaskStatus} canCreate={false} />}
+          {page === 'devreports' && <ReportsPage tasks={developerTasks} projects={developerProjects} members={developerMembers} sprints={developerSprints} mode="developer" />}
         </div>
       </main>
       {profileOpen && user && <ProfileModal user={user} onClose={() => setProfileOpen(false)} onSaved={(updated) => onUserUpdate?.(updated)} />}

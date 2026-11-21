@@ -54,9 +54,9 @@ export const INIT_MEMBERS: Member[] = [
 ]
 
 export const INIT_SPRINTS: Sprint[] = [
-  { id: 1, name: 'Sprint 14', project: 'Portal do Cliente B2B', startDate: '2026-07-14', endDate: '2026-07-25', daysDelayed: 11, progress: 58, totalTasks: 24, doneTasks: 14, blockedTasks: 3, team: ['Ana Lima','Carlos Mendes','Priya Singh','Rafael Costa'], goal: 'Finalizar SSO, onboarding redesign e dashboard de métricas.' },
-  { id: 2, name: 'Sprint 9', project: 'Plataforma de Pagamentos', startDate: '2026-07-21', endDate: '2026-08-01', daysDelayed: 4, progress: 72, totalTasks: 18, doneTasks: 13, blockedTasks: 1, team: ['Beatriz Souza','Marcos Ferreira','Tiago Alves'], goal: 'Testes de carga, webhook de recusa e integração Pagar.me sandbox.' },
-  { id: 3, name: 'Sprint 6', project: 'ERP Interno', startDate: '2026-07-28', endDate: '2026-08-04', daysDelayed: 1, progress: 85, totalTasks: 12, doneTasks: 10, blockedTasks: 0, team: ['Ana Lima','Juliana Park'], goal: 'Exportação PDF e relatório de folha de pagamento.' },
+  { id: 1, name: 'Sprint 14', project: 'Portal do Cliente B2B', startDate: '2026-07-14', endDate: '2026-07-25', daysDelayed: 11, progress: 58, totalTasks: 24, doneTasks: 14, blockedTasks: 3, team: ['Ana Lima','Carlos Mendes','Priya Singh','Rafael Costa'], goal: 'Finalizar SSO, onboarding redesign e dashboard de métricas.', status: 'Em andamento' },
+  { id: 2, name: 'Sprint 9', project: 'Plataforma de Pagamentos', startDate: '2026-07-21', endDate: '2026-08-01', daysDelayed: 4, progress: 72, totalTasks: 18, doneTasks: 13, blockedTasks: 1, team: ['Beatriz Souza','Marcos Ferreira','Tiago Alves'], goal: 'Testes de carga, webhook de recusa e integração Pagar.me sandbox.', status: 'Em andamento' },
+  { id: 3, name: 'Sprint 6', project: 'ERP Interno', startDate: '2026-07-28', endDate: '2026-08-04', daysDelayed: 1, progress: 85, totalTasks: 12, doneTasks: 10, blockedTasks: 0, team: ['Ana Lima','Juliana Park'], goal: 'Exportação PDF e relatório de folha de pagamento.', status: 'Planejada' },
 ]
 
 export const INIT_PROJECTS: Project[] = [

@@ -152,7 +152,7 @@ export const txt = {
     novoProjeto: '＋ Novo Projeto',
     novaSprint: '＋ Nova Sprint',
     novaTarefa: '＋ Nova Tarefa',
-    adicionarMembro: '＋ Adicionar Membro',
+    adicionarMembro: '＋ Vincular Membro',
     salvar: 'Salvar',
     cancelar: 'Cancelar',
     fechar: 'Fechar',

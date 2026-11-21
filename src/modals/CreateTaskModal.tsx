@@ -5,7 +5,7 @@ import { inputStyle } from '../components/form'
 import { Badge, BtnPrimary, PriorityDot, TagPill } from '../components/atoms'
 import MemberPickerRow from '../components/MemberPickerRow'
 import { c, STATUS_META, STATUS_OPTIONS } from '../theme'
-import { mkInitials, nextTaskId } from '../utils'
+import { mkInitials, nextTaskId, fmtDate } from '../utils'
 import type { Task, Project, Member, Sprint, TaskPriority, TaskStatus } from '../types'
 import * as api from '../api'
 import type { CatalogItem } from '../api/catalogos'
@@ -16,7 +16,7 @@ interface Props {
   members: Member[]
   sprints: Sprint[]
   onClose: () => void
-  onSave: (t: Omit<Task, 'id'>) => void
+  onSave: (t: Omit<Task, 'id'>) => Promise<void>
 }
 
 export default function CreateTaskModal({ projects, tasks: _tasks, members, sprints, onClose, onSave }: Props) {
@@ -33,24 +33,29 @@ export default function CreateTaskModal({ projects, tasks: _tasks, members, spri
   const [tags, setTags] = useState<string[]>([])
   const [tagIds, setTagIds] = useState<number[]>([])
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [serverError, setServerError] = useState('')
   const [statusCatalog, setStatusCatalog] = useState<CatalogItem[]>([])
+  const [statusError, setStatusError] = useState('')
   const [priorityCatalog, setPriorityCatalog] = useState<CatalogItem[]>([])
   const [tagCatalog, setTagCatalog] = useState<CatalogItem[]>([])
 
   useEffect(() => {
-    Promise.all([
-      api.catalogos.listarStatus(),
-      api.catalogos.listarPrioridades(),
-      api.catalogos.listarTags(),
-    ]).then(([availableStatus, availablePriorities, availableTags]) => {
-      setStatusCatalog(availableStatus)
+    let active = true
+    api.catalogos.listarStatus()
+      .then((availableStatus) => { if (active) setStatusCatalog(availableStatus) })
+      .catch((error: unknown) => { if (active) setStatusError(api.getApiErrorMessage(error)) })
+
+    Promise.all([api.catalogos.listarPrioridades(), api.catalogos.listarTags()])
+      .then(([availablePriorities, availableTags]) => {
+      if (!active) return
       setPriorityCatalog(availablePriorities)
       setTagCatalog(availableTags)
     }).catch(() => {
-      setStatusCatalog([])
+      if (!active) return
       setPriorityCatalog([])
       setTagCatalog([])
     })
+    return () => { active = false }
   }, [])
 
   const sprintOptions = useMemo(
@@ -72,39 +77,53 @@ export default function CreateTaskModal({ projects, tasks: _tasks, members, spri
     return Object.keys(e).length === 0
   }
 
-  function submit() {
+  async function submit() {
+    setServerError('')
     if (!validate()) return
     const m = members.find((x) => x.name === assignee)
     const selectedProject = projects.find((item) => item.name === project)
     const selectedSprint = sprints.find((item) => item.name === sprint)
     const selectedStatus = statusCatalog.find((item) => item.nome === status)
     const selectedPriority = priorityCatalog.find((item) => item.nome.toLocaleLowerCase('pt-BR') === priority)
-    onSave({
-      title: title.trim(),
-      project,
-      projectId: selectedProject ? Number(String(selectedProject.id).replace(/\D/g, '')) : undefined,
-      sprint: sprint.trim(),
-      sprintId: selectedSprint?.id,
-      assignee,
-      assigneeId: m ? Number(String(m.id).replace(/\D/g, '')) : undefined,
-      avatar: m?.avatar ?? mkInitials(assignee),
-      avatarColor: m?.color ?? '#4B7BF5',
-      priority,
-      priorityId: selectedPriority?.id,
-      status,
-      statusId: selectedStatus?.id ?? {
-        Planejada: 1,
-        'Em andamento': 2,
-        Concluída: 3,
-        Bloqueada: 4,
-      }[status],
-      daysDelayed: 0,
-      plannedEnd,
-      estimatedHours: parseFloat(estimatedHours) || 0,
-      blockedBy: blockedBy.trim() || null,
-      tags,
-      tagIds,
-    })
+    if (!selectedStatus) {
+      setServerError(statusError || 'O catálogo de status ainda não foi carregado. Tente novamente.')
+      return
+    }
+    try {
+      await onSave({
+        title: title.trim(),
+        project,
+        projectId: selectedProject ? Number(String(selectedProject.id).replace(/\D/g, '')) : undefined,
+        sprint: sprint.trim(),
+        sprintId: selectedSprint?.id,
+        assignee,
+        assigneeId: m ? Number(String(m.id).replace(/\D/g, '')) : undefined,
+        avatar: m?.avatar ?? mkInitials(assignee),
+        avatarColor: m?.color ?? '#4B7BF5',
+        priority,
+        priorityId: selectedPriority?.id,
+        status,
+        statusId: selectedStatus.id,
+        daysDelayed: 0,
+        plannedEnd,
+        estimatedHours: parseFloat(estimatedHours) || 0,
+        blockedBy: blockedBy.trim() || null,
+        tags,
+        tagIds,
+      })
+    } catch (err: any) {
+      // extrai mensagem legível do erro da API para mostrar ao usuário
+      let msg = err?.response?.data?.message ?? err?.message ?? 'Erro desconhecido'
+      // se o erro for relacionado à data de entrega da sprint, anexar a data fim da sprint para referência
+      const selectedSprint = sprints.find((item) => item.name === sprint)
+      if (selectedSprint && msg.toString().toLowerCase().includes('entrega')) {
+        const end = selectedSprint.endDate
+        if (end) {
+          msg = `${msg} Limite da sprint: ${fmtDate(end)}`
+        }
+      }
+      setServerError(msg)
+    }
   }
 
   async function addTag() {
@@ -126,6 +145,7 @@ export default function CreateTaskModal({ projects, tasks: _tasks, members, spri
 
   return (
     <Modal title="Nova Tarefa" onClose={onClose} onSubmit={submit} submitLabel="Criar Tarefa" wide>
+      {serverError && <div style={{ marginBottom: 12, padding: '10px 12px', backgroundColor: c.redLight, color: c.red, borderRadius: 8, fontSize: 13 }}>{serverError}</div>}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <Field label="Título" required error={errors.title}>
