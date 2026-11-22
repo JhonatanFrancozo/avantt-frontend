@@ -761,53 +761,66 @@ export default function ReportsPage({
                 key={sprint.id}
                 style={{
                   display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  marginBottom: 7,
+                  flexDirection: 'column',
+                  gap: 5,
+                  marginBottom: 13,
+                  paddingBottom: 10,
+                  borderBottom: `1px solid ${c.border}`,
                 }}
               >
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div
-                    style={{
-                      fontSize: 11,
-                      color: c.textPrimary,
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {sprint.name}
-                  </div>
-
-                  <div
-                    style={{
-                      fontSize: 10,
-                      color: c.textMuted,
-                    }}
-                  >
-                    {sprint.project}
-                  </div>
-                </div>
-
-                <ProgressBar
-                  value={sprint.progress}
-                  color={sprint.daysDelayed > 0 ? c.red : c.green}
-                  height={4}
-                />
-
-                <span
+                <div
                   style={{
-                    fontSize: 11,
-                    fontFamily: 'var(--font-mono)',
-                    fontWeight: 700,
-                    color: sprint.daysDelayed > 0 ? c.red : c.green,
-                    width: 36,
-                    textAlign: 'right',
-                    flexShrink: 0,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: c.textPrimary,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
                   }}
                 >
-                  {sprint.progress}%
-                </span>
+                  {sprint.name}
+                </div>
+
+                <div
+                  style={{
+                    fontSize: 10,
+                    color: c.textMuted,
+                  }}
+                >
+                  {sprint.project}
+                </div>
+
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    width: '100%',
+                    marginTop: 3,
+                  }}
+                >
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <ProgressBar
+                      value={sprint.progress}
+                      color={sprint.daysDelayed > 0 ? c.red : c.green}
+                      height={5}
+                    />
+                  </div>
+
+                  <span
+                    style={{
+                      fontSize: 11,
+                      fontFamily: 'var(--font-mono)',
+                      fontWeight: 700,
+                      color: sprint.daysDelayed > 0 ? c.red : c.green,
+                      width: 36,
+                      textAlign: 'right',
+                      flexShrink: 0,
+                    }}
+                  >
+                    {sprint.progress}%
+                  </span>
+                </div>
               </div>
             ))}
           </div>

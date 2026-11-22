@@ -54,9 +54,9 @@ const STATUS_IDS: Record<TaskStatus, number> = {
   'planejada': 1,
   'em andamento': 2,
   'revisão': 3,
+  'concluída': 3,
   'bloqueada': 4,
-  'concluída': 5,
-  'cancelada': 6,
+  'cancelada': 4,
 }
 
 const PRIORITIES: TaskPriority[] = ['crítica', 'alta', 'média', 'baixa']
