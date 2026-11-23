@@ -17,8 +17,6 @@ interface Props {
 }
 
 export default function AccessPendingPage({ user, dark, onToggleTheme, onLinked, onLogout, onUserUpdate }: Props) {
-  const [email, setEmail] = useState(user.email ?? '')
-  const [password, setPassword] = useState('')
   const [code, setCode] = useState('')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -26,18 +24,14 @@ export default function AccessPendingPage({ user, dark, onToggleTheme, onLinked,
 
   async function submit(event: FormEvent) {
     event.preventDefault()
-    if (!email.trim() || password.length < 8 || !/^[A-Za-z0-9]{6}$/.test(code.trim())) {
-      setError('Informe seu e-mail, senha e o código de 6 caracteres.')
+    if (code.trim().length < 4) {
+      setError('Informe um código de acesso válido.')
       return
     }
     setSubmitting(true)
     setError('')
     try {
-      onLinked(await api.auth.acceptInvitation({
-        token: code.trim(),
-        email: email.trim().toLowerCase(),
-        password,
-      }))
+      onLinked(await api.auth.linkOrganization(code.trim()))
     } catch (requestError) {
       setError(api.getApiErrorMessage(requestError))
     } finally {
@@ -67,7 +61,7 @@ export default function AccessPendingPage({ user, dark, onToggleTheme, onLinked,
             Olá, {user.name.split(' ')[0]}. Sua conta está pronta.
           </div>
           <p className="mt-4 max-w-xl text-base leading-7 text-text-secondary">
-            Você ainda não concluiu o acesso ao projeto. Enquanto a validação não for concluída, nenhum projeto ou tarefa ficará disponível.
+            Você ainda não faz parte de uma organização. Enquanto não houver um vínculo, nenhum projeto, tarefa ou dado empresarial ficará disponível.
           </p>
 
           <div className="mt-8 grid gap-3 sm:grid-cols-3">
@@ -86,50 +80,25 @@ export default function AccessPendingPage({ user, dark, onToggleTheme, onLinked,
         </section>
 
         <section className="rounded-2xl border border-border bg-surface p-6 shadow-xl shadow-sidebar/5 sm:p-8">
-          <div className="text-xl font-bold text-text-primary">Validar primeiro acesso</div>
+          <div className="text-xl font-bold text-text-primary">Vincular organização</div>
           <p className="mt-2 text-sm leading-6 text-text-muted">
-            Use o código enviado por e-mail junto com suas credenciais.
+            Você pode fazer isso agora ou voltar mais tarde. Sua conta continuará ativa.
           </p>
 
           <form className="mt-7 space-y-5" onSubmit={submit}>
-            <Field label="E-mail" required>
+            <Field label="Código de acesso" required error={error}>
               <Inp
-                id="pending-email"
-                name="email"
-                type="email"
-                value={email}
-                onChange={setEmail}
-                autoComplete="email"
-                required
-              />
-            </Field>
-            <Field label="Senha" required>
-              <Inp
-                id="pending-password"
-                name="password"
-                type="password"
-                value={password}
-                onChange={setPassword}
-                placeholder="Sua senha cadastrada"
-                autoComplete="current-password"
-                required
-              />
-            </Field>
-            <Field label="Código de 6 dígitos" required error={error}>
-              <Inp
-                id="access-code"
-                name="accessCode"
+                id="organization-code"
+                name="organizationCode"
                 value={code}
                 onChange={setCode}
-                placeholder="Ex: 123456"
+                placeholder="Ex: AVT-8F2K"
                 autoComplete="one-time-code"
-                inputMode="numeric"
-                maxLength={6}
                 required
               />
             </Field>
             <BtnPrimary type="submit" fullWidth disabled={submitting}>
-              {submitting ? 'Validando código...' : 'Concluir primeiro acesso'}
+              {submitting ? 'Validando código...' : 'Vincular organização'}
               <ProductIcon name="arrow" />
             </BtnPrimary>
           </form>

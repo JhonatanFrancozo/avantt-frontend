@@ -15,33 +15,19 @@ let mockClients: Client[] = [
 
 export type ClientInput = Omit<Client, 'id' | 'organizationId' | 'createdAt'>
 
-function clientToRequest(body: Partial<ClientInput>) {
+function clientToRequest(body: ClientInput) {
   return {
-    name: body.name,
-    document: body.document || undefined,
+    nome: body.name,
+    documento: body.document || undefined,
     email: body.email || undefined,
-    phone: body.phone || undefined,
-  }
-}
-
-function normalizeClient(data: Client): Client {
-  const raw = data as Client & { dataCadastro?: string }
-  return {
-    ...raw,
-    id: Number(raw.id),
-    organizationId: raw.organizationId == null ? undefined : Number(raw.organizationId),
-    name: String(raw.name ?? ''),
-    document: String(raw.document ?? ''),
-    email: String(raw.email ?? ''),
-    phone: String(raw.phone ?? ''),
-    createdAt: raw.createdAt ?? raw.dataCadastro,
+    telefone: body.phone || undefined,
   }
 }
 
 export async function listarClientes(): Promise<Client[]> {
   if (shouldUseMock()) return structuredClone(mockClients)
   const { data } = await api.get<Client[]>('/clientes')
-  return data.map(normalizeClient)
+  return data
 }
 
 export async function criarCliente(body: ClientInput): Promise<Client> {
@@ -51,7 +37,7 @@ export async function criarCliente(body: ClientInput): Promise<Client> {
     return structuredClone(created)
   }
   const { data } = await api.post<Client>('/clientes', clientToRequest(body))
-  return normalizeClient(data)
+  return data
 }
 
 export async function atualizarCliente(id: number, body: Partial<ClientInput>): Promise<Client> {
@@ -62,6 +48,6 @@ export async function atualizarCliente(id: number, body: Partial<ClientInput>): 
     mockClients = mockClients.map((client) => client.id === id ? updated : client)
     return structuredClone(updated)
   }
-  const { data } = await api.patch<Client>(`/clientes/${id}`, clientToRequest(body))
-  return normalizeClient(data)
+  const { data } = await api.patch<Client>(`/clientes/${id}`, clientToRequest(body as ClientInput))
+  return data
 }

@@ -9,11 +9,9 @@ import { EmptyState } from '../components/layout'
 interface Props {
   members: Member[]
   projects: Project[]
-  onAddMember: () => void
-  canManage?: boolean
 }
 
-export default function TeamPage({ members, projects, onAddMember, canManage = true }: Props) {
+export default function TeamPage({ members, projects }: Props) {
   const [filterProject, setFilterProject] = useState('')
   const [filterRole, setFilterRole] = useState('')
 
@@ -48,7 +46,6 @@ export default function TeamPage({ members, projects, onAddMember, canManage = t
             <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: c.textPrimary }}>{filtered.length}</span> membro{filtered.length !== 1 ? 's' : ''}
           </div>
         </div>
-        {/* Botão de vincular membro centralizado no PageHeader; removido aqui para evitar duplicação */}
       </div>
 
       <div style={{ display: 'flex', gap: 12 }}>
@@ -63,8 +60,6 @@ export default function TeamPage({ members, projects, onAddMember, canManage = t
           <EmptyState
             title={members.length ? 'Nenhum membro encontrado' : 'Sua equipe ainda está vazia'}
             description={members.length ? 'Ajuste os filtros para encontrar outros membros.' : 'Adicione pessoas para distribuir tarefas e acompanhar a capacidade do time.'}
-            actionLabel={members.length ? undefined : 'Adicionar membro'}
-            onAction={members.length ? undefined : onAddMember}
           />
         )}
         {filtered.map((m) => (
@@ -76,6 +71,11 @@ export default function TeamPage({ members, projects, onAddMember, canManage = t
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 14, fontWeight: 600, color: c.textPrimary }}>{m.name}</div>
                   <div style={{ fontSize: 12, color: c.textMuted }}>{m.role}</div>
+                  {m.appRole && (
+                    <div style={{ fontSize: 10, color: m.appRole === 'manager' ? c.blue : c.green, marginTop: 2, fontWeight: 700 }}>
+                      {m.appRole === 'manager' ? 'GERENTE' : 'DESENVOLVEDOR'}
+                    </div>
+                  )}
                   {m.email && <div style={{ fontSize: 11, color: c.textMuted, marginTop: 1 }}>{m.email}</div>}
                   {m.inviteStatus === 'pending' && <div style={{ fontSize: 10, color: c.amber, marginTop: 3, fontWeight: 600 }}>CONVITE PENDENTE</div>}
                 </div>

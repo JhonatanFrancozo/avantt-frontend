@@ -62,14 +62,9 @@ export default function Sidebar({ active, onNav, projects, onLogout, user, onPro
         {demoMode && (
           <button
             onClick={onLogout}
-            style={{ width: '100%', marginBottom: 10, border: '1px solid #4B7BF5', borderRadius: 8, backgroundColor: '#4B7BF5', color: '#fff', cursor: 'pointer', padding: '10px 12px', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+            style={{ width: '100%', marginBottom: 10, border: '1px solid #4B7BF5', borderRadius: 8, backgroundColor: '#4B7BF5', color: '#fff', cursor: 'pointer', padding: '10px 12px', fontSize: 12, fontWeight: 700 }}
           >
             Sair da demonstração
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-              <polyline points="16 17 21 12 16 7" />
-              <line x1="21" y1="12" x2="9" y2="12" />
-            </svg>
           </button>
         )}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -82,17 +77,19 @@ export default function Sidebar({ active, onNav, projects, onLogout, user, onPro
               </span>
             </span>
           </BtnPrimary>
-          {!demoMode && <button
-            onClick={onLogout}
-            title="Sair"
-            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, borderRadius: 4, color: c.textOnDarkMuted, display: 'flex', alignItems: 'center', flexShrink: 0 }}
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-              <polyline points="16 17 21 12 16 7" />
-              <line x1="21" y1="12" x2="9" y2="12" />
-            </svg>
-          </button>}
+          {!demoMode && (
+            <button
+              onClick={onLogout}
+              title="Sair"
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, borderRadius: 4, color: c.textOnDarkMuted, display: 'flex', alignItems: 'center', flexShrink: 0 }}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
+            </button>
+          )}
         </div>
       </div>
     </aside>

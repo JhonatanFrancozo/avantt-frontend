@@ -1,11 +1,10 @@
-import { useMemo, useState } from 'react'
+import { useState, useMemo } from 'react'
 import Modal from '../components/Modal'
 import { Field, Inp, Sel, Textarea } from '../components/form'
 import MemberPickerRow from '../components/MemberPickerRow'
 import { c } from '../theme'
 import { getApiErrorMessage } from '../api'
-import type { Sprint, SprintStatus, Project, Member } from '../types'
-import { maskDateInput, dateInputToIso, isoToDateInput } from '../utils'
+import type { Sprint, Project, Member, SprintStatus } from '../types'
 
 interface Props {
   projects: Project[]
@@ -20,8 +19,8 @@ const sprintStatuses: SprintStatus[] = ['Planejada', 'Em andamento', 'Finalizada
 export default function CreateSprintModal({ projects, members, initial, onClose, onSave }: Props) {
   const [name, setName] = useState(initial?.name ?? '')
   const [project, setProject] = useState(initial?.project ?? '')
-  const [startDate, setStartDate] = useState(initial?.startDate ? isoToDateInput(initial.startDate) : '')
-  const [endDate, setEndDate] = useState(initial?.endDate ? isoToDateInput(initial.endDate) : '')
+  const [startDate, setStartDate] = useState(initial?.startDate?.slice(0, 10) ?? '')
+  const [endDate, setEndDate] = useState(initial?.endDate?.slice(0, 10) ?? '')
   const [goal, setGoal] = useState(initial?.goal ?? '')
   const [status, setStatus] = useState<SprintStatus>(initial?.status ?? 'Planejada')
   const [team, setTeam] = useState<string[]>(initial?.team ?? [])
@@ -29,27 +28,54 @@ export default function CreateSprintModal({ projects, members, initial, onClose,
   const [serverError, setServerError] = useState('')
 
   const listMembers = useMemo(
-    () => (project ? members.filter((member) => member.projects.includes(project)) : members),
-    [project, members],
+    () => {
+      if (!project) return members
+
+      const selectedProject = projects.find((item) => item.name === project)
+      const projectTeamIds = new Set(
+        (selectedProject?.teamIds ?? []).map(String)
+      )
+      const projectTeamNames = new Set(
+        (selectedProject?.team ?? []).map((name) => name.trim().toLowerCase())
+      )
+
+      const filtered = members.filter((member) => {
+        const memberId = String(member.id).replace(/\D/g, '')
+        const memberName = member.name.trim().toLowerCase()
+        return (
+          projectTeamIds.has(memberId) ||
+          projectTeamIds.has(String(member.id)) ||
+          projectTeamNames.has(memberName) ||
+          member.projectIds?.includes(String(selectedProject?.id).replace(/\D/g, '')) ||
+          member.projects.includes(project)
+        )
+      })
+
+      return filtered.length > 0 ? filtered : members
+    },
+    [project, members, projects],
   )
 
   function validate() {
-    const nextErrors: Record<string, string> = {}
-    if (!name.trim()) nextErrors.name = 'Nome obrigatório'
-    if (!project) nextErrors.project = 'Projeto obrigatório'
-    if (!startDate) nextErrors.startDate = 'Data de início obrigatória'
-    if (!endDate) nextErrors.endDate = 'Data de fim obrigatória'
-    const startIso = dateInputToIso(startDate)
-    const endIso = dateInputToIso(endDate)
-    if (startDate && !startIso) nextErrors.startDate = 'Use o formato DD/MM/AAAA'
-    if (endDate && !endIso) nextErrors.endDate = 'Use o formato DD/MM/AAAA'
-    if (startIso && endIso && startIso >= endIso) nextErrors.endDate = 'Data de fim deve ser após início'
-    const periodChanged = !initial || startIso !== initial.startDate || endIso !== initial.endDate
-    if (periodChanged && startIso && endIso && (new Date(endIso).getTime() - new Date(startIso).getTime()) / 86400000 < 15) {
-      nextErrors.endDate = 'A sprint deve ter duração mínima de 15 dias'
+    const e: Record<string, string> = {}
+    if (!name.trim()) e.name = 'Nome obrigatório'
+    if (!project) e.project = 'Projeto obrigatório'
+    if (!startDate) e.startDate = 'Data de início obrigatória'
+    if (!endDate) e.endDate = 'Data de fim obrigatória'
+    if (startDate && endDate && startDate >= endDate) e.endDate = 'Data de fim deve ser após início'
+    const periodChanged = !initial
+      || startDate !== initial.startDate.slice(0, 10)
+      || endDate !== initial.endDate.slice(0, 10)
+    if (
+      periodChanged &&
+      startDate &&
+      endDate &&
+      (new Date(endDate).getTime() - new Date(startDate).getTime()) / 86400000 < 15
+    ) {
+      e.endDate = 'A sprint deve ter duração mínima de 15 dias'
     }
-    setErrors(nextErrors)
-    return Object.keys(nextErrors).length === 0
+    setErrors(e)
+    return Object.keys(e).length === 0
   }
 
   async function submit() {
@@ -62,8 +88,8 @@ export default function CreateSprintModal({ projects, members, initial, onClose,
         project,
         projectId: initial?.projectId ?? (selectedProject ? Number(String(selectedProject.id).replace(/\D/g, '')) : undefined),
         status,
-        startDate: dateInputToIso(startDate),
-        endDate: dateInputToIso(endDate),
+        startDate,
+        endDate,
         daysDelayed: initial?.daysDelayed ?? 0,
         progress: initial?.progress ?? 0,
         totalTasks: initial?.totalTasks ?? 0,
@@ -79,13 +105,17 @@ export default function CreateSprintModal({ projects, members, initial, onClose,
   }
 
   function toggleMember(memberName: string) {
-    setTeam((current) => current.includes(memberName)
-      ? current.filter((name) => name !== memberName)
-      : [...current, memberName])
+    setTeam((t) => t.includes(memberName) ? t.filter((x) => x !== memberName) : [...t, memberName])
   }
 
   return (
-    <Modal title={initial ? 'Editar Sprint' : 'Nova Sprint'} onClose={onClose} onSubmit={submit} submitLabel={initial ? 'Salvar alterações' : 'Criar Sprint'} wide>
+    <Modal
+      title={initial ? 'Editar Sprint' : 'Nova Sprint'}
+      onClose={onClose}
+      onSubmit={submit}
+      submitLabel={initial ? 'Salvar alterações' : 'Criar Sprint'}
+      wide
+    >
       {serverError && <div role="alert" style={{ marginBottom: 12, padding: '10px 12px', backgroundColor: c.redLight, color: c.red, borderRadius: 8, fontSize: 13 }}>{serverError}</div>}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -95,17 +125,27 @@ export default function CreateSprintModal({ projects, members, initial, onClose,
           <Field label="Projeto" required error={errors.project}>
             {initial
               ? <div style={{ padding: '9px 10px', color: c.textSecondary, backgroundColor: c.bg, borderRadius: 7 }}>{project}</div>
-              : <Sel value={project} onChange={setProject} options={projects.map((item) => ({ value: item.name, label: item.name }))} />}
+              : (
+                <Sel
+                  value={project}
+                  onChange={(value) => {
+                    setProject(value)
+                    const selectedProject = projects.find((item) => item.name === value)
+                    setTeam(selectedProject?.team ?? [])
+                  }}
+                  options={projects.map((item) => ({ value: item.name, label: item.name }))}
+                />
+              )}
           </Field>
           <Field label="Status" required>
             <Sel value={status} onChange={(value) => setStatus(value as SprintStatus)} options={sprintStatuses.map((value) => ({ value, label: value }))} />
           </Field>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <Field label="Início" required error={errors.startDate}>
-              <Inp value={startDate} onChange={(value) => setStartDate(maskDateInput(value))} placeholder="DD/MM/AAAA" inputMode="numeric" maxLength={10} />
+              <Inp type="date" value={startDate} onChange={setStartDate} />
             </Field>
             <Field label="Fim" required error={errors.endDate}>
-              <Inp value={endDate} onChange={(value) => setEndDate(maskDateInput(value))} placeholder="DD/MM/AAAA" inputMode="numeric" maxLength={10} />
+              <Inp type="date" value={endDate} onChange={setEndDate} />
             </Field>
           </div>
           <Field label="Objetivo da sprint">
@@ -119,8 +159,8 @@ export default function CreateSprintModal({ projects, members, initial, onClose,
               {project ? `Membros do projeto "${project}"` : 'Selecione um projeto para filtrar membros'}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 320, overflowY: 'auto' }}>
-              {listMembers.map((member) => (
-                <MemberPickerRow key={member.id} member={member} selected={team.includes(member.name)} onToggle={toggleMember} showWorkload />
+              {listMembers.map((m) => (
+                <MemberPickerRow key={m.id} member={m} selected={team.includes(m.name)} onToggle={toggleMember} showWorkload />
               ))}
             </div>
             {team.length > 0 && (

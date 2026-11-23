@@ -6,6 +6,7 @@ import ProductIcon from '../components/ProductIcon'
 import { siteCopy as copy } from '../content'
 import { getApiErrorMessage } from '../api'
 import type { LoginPayload, SignupPayload } from '../types'
+import { formatCnpj, formatPhone } from '../utils'
 
 type AuthMode = 'login' | 'signup'
 
@@ -23,21 +24,13 @@ type FormErrors = Partial<Record<'name' | 'company' | 'email' | 'password' | 'co
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
-function formatCnpj(value: string) {
-  const digits = value.replace(/\D/g, '').slice(0, 14)
-  return digits
-    .replace(/^(\d{2})(\d)/, '$1.$2')
-    .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
-    .replace(/\.(\d{3})(\d)/, '.$1/$2')
-    .replace(/(\d{4})(\d)/, '$1-$2')
-}
-
 export default function AuthPage({ initialMode, dark, onToggleTheme, onBack, onSubmit }: Props) {
   const [mode, setMode] = useState<AuthMode>(initialMode)
   const [name, setName] = useState('')
   const [signupType, setSignupType] = useState<'organization' | 'developer'>('organization')
   const [company, setCompany] = useState('')
   const [cnpj, setCnpj] = useState('')
+  const [phone, setPhone] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -74,6 +67,7 @@ export default function AuthPage({ initialMode, dark, onToggleTheme, onBack, onS
               password,
               organizationName: signupType === 'organization' ? company.trim() : undefined,
               cnpj: signupType === 'organization' ? cnpj.trim() : undefined,
+              phone: signupType === 'organization' ? phone : undefined,
             },
       )
     } catch (error) {
@@ -197,9 +191,14 @@ export default function AuthPage({ initialMode, dark, onToggleTheme, onBack, onS
                   )}
                 </div>
                 {signupType === 'organization' && (
-                  <Field label="CNPJ">
-                    <Inp id="signup-cnpj" name="cnpj" value={cnpj} onChange={(value) => setCnpj(formatCnpj(value))} placeholder="00.000.000/0000-00" />
-                  </Field>
+                  <div className="grid gap-5 sm:grid-cols-2">
+                    <Field label="CNPJ">
+                      <Inp id="signup-cnpj" name="cnpj" value={cnpj} onChange={(value) => setCnpj(formatCnpj(value))} placeholder="00.000.000/0000-00" />
+                    </Field>
+                    <Field label="Telefone de contato">
+                      <Inp id="signup-phone" name="phone" type="tel" value={phone} onChange={(value) => setPhone(formatPhone(value))} placeholder="(00) 00000-0000" autoComplete="tel" />
+                    </Field>
+                  </div>
                 )}
                 <Field label={copy.auth.email} required error={errors.email}>
                   <Inp id="signup-email" name="email" type="email" value={email} onChange={setEmail} placeholder={copy.auth.emailPlaceholder} autoComplete="email" required />

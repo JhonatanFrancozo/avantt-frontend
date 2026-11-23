@@ -1,5 +1,4 @@
 import { api, shouldUseMock } from './client'
-import { normalizeText } from '../utils'
 
 export interface CatalogItem {
   id: number
@@ -28,10 +27,7 @@ const mockTags: CatalogItem[] = [
 export async function listarStatus(): Promise<CatalogItem[]> {
   if (shouldUseMock()) return structuredClone(mockStatus)
   const { data } = await api.get<CatalogItem[]>('/status')
-  const allowed = new Set(['planejada', 'em andamento', 'concluída', 'bloqueada'])
   return data
-    .map((item) => ({ ...item, nome: normalizeText(item.nome) }))
-    .filter((item) => allowed.has(item.nome.toLocaleLowerCase('pt-BR')))
 }
 
 export async function listarPrioridades(): Promise<CatalogItem[]> {
@@ -66,6 +62,8 @@ export async function listarPerfis(): Promise<CatalogItem[]> {
     return [
       { id: 1, nome: 'Admin' },
       { id: 2, nome: 'Colaborador' },
+      { id: 3, nome: 'Gerente' },
+      { id: 4, nome: 'Desenvolvedor' },
     ]
   }
   const { data } = await api.get<CatalogItem[]>('/perfis')
