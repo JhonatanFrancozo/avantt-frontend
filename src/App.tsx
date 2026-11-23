@@ -2,30 +2,61 @@ import { useEffect, useState } from 'react'
 import { useTheme } from './theme'
 import MarketingPage from './pages/MarketingPage'
 import AuthPage from './pages/AuthPage'
-import AccessPendingPage from './pages/AccessPendingPage'
 import InvitationPage from './pages/InvitationPage'
 import DashboardApp from './DashboardApp'
 import DevDashboardApp from './DevDashboardApp'
 import * as api from './api'
-import type { AuthSession, LoginPayload, SignupPayload } from './types'
+import type {
+  AuthSession,
+  LoginPayload,
+  LoginResult,
+  SignupPayload,
+  SessionUser,
+} from './types'
+import { TesteStatus } from './components/TesteStatus'
 
-type AppView = 'marketing' | 'auth' | 'dashboard' | 'pending' | 'invitation'
+type AppView =
+  | 'marketing'
+  | 'auth'
+  | 'dashboard'
+  | 'invitation'
+  | 'status'
+
 type AuthMode = 'login' | 'signup'
 
-function getViewForSession(session: AuthSession): AppView {
-  if (session.requiresFirstAccessValidation && session.user.role === 'developer') return 'pending'
-  return 'dashboard'
+interface PendingFirstAccess {
+  email: string
+  password: string
+  remember: boolean
 }
 
 export default function App() {
-  const [session, setSession] = useState<AuthSession | null>(() => api.auth.loadSession())
-  const invitationToken = new URLSearchParams(window.location.search).get('token')
-  const [view, setView] = useState<AppView>(() => {
-    if (invitationToken) return 'invitation'
-    if (!session) return 'marketing'
-    return getViewForSession(session)
-  })
+  const [session, setSession] = useState<AuthSession | null>(
+    () => api.auth.loadSession()
+  )
+
+  const testarStatus =
+    new URLSearchParams(window.location.search).get('teste') === 'status'
+  const conviteDireto =
+    new URLSearchParams(window.location.search).get('convite') === '1'
+  const conviteEmail =
+    new URLSearchParams(window.location.search).get('email') ?? ''
+
+  const [view, setView] = useState<AppView>(() =>
+    testarStatus
+      ? 'status'
+      : conviteDireto
+        ? 'invitation'
+        : api.auth.loadSession()
+        ? 'dashboard'
+        : 'marketing'
+  )
+
   const [authMode, setAuthMode] = useState<AuthMode>('login')
+
+  const [pendingFirstAccess, setPendingFirstAccess] =
+    useState<PendingFirstAccess | null>(null)
+
   const { dark, toggle } = useTheme()
 
   function openAuth(mode: AuthMode) {
@@ -33,69 +64,140 @@ export default function App() {
     setView('auth')
   }
 
-  async function authenticate(mode: AuthMode, payload: LoginPayload | SignupPayload) {
-    const nextSession = mode === 'login'
-      ? await api.auth.login(payload as LoginPayload)
-      : await api.auth.signup(payload as SignupPayload)
-    const remember = mode === 'login' ? (payload as LoginPayload).remember : true
-    api.auth.saveSession(nextSession, remember)
+  async function authenticate(
+    mode: AuthMode,
+    payload: LoginPayload | SignupPayload
+  ) {
+    if (mode === 'login') {
+      const loginPayload = payload as LoginPayload
+      const result = await api.auth.login(loginPayload)
+
+      completeAuthentication(
+        result,
+        loginPayload.email,
+        loginPayload.password,
+        loginPayload.remember
+      )
+      return
+    }
+
+    const signupPayload = payload as SignupPayload
+    const result = await api.auth.signup(signupPayload)
+
+    completeAuthentication(
+      result,
+      signupPayload.email,
+      signupPayload.password,
+      true
+    )
+  }
+
+  function completeAuthentication(
+    result: LoginResult,
+    email: string,
+    password: string,
+    remember: boolean
+  ) {
+    if (result.requiresFirstAccessValidation) {
+      setPendingFirstAccess({
+        email: result.email || email,
+        password,
+        remember,
+      })
+
+      setView('invitation')
+      return
+    }
+
+    api.auth.saveSession(result.session, remember)
+    setSession(result.session)
+    setPendingFirstAccess(null)
+    setView('dashboard')
+  }
+
+  function finishFirstAccess(nextSession: AuthSession) {
+    api.auth.saveSession(nextSession, pendingFirstAccess?.remember ?? true)
+
     setSession(nextSession)
-    setView(getViewForSession(nextSession))
+    setPendingFirstAccess(null)
+    window.history.replaceState({}, '', window.location.pathname)
+    setView('dashboard')
+  }
+
+  function cancelFirstAccess() {
+    setPendingFirstAccess(null)
+    setAuthMode('login')
+    window.history.replaceState({}, '', window.location.pathname)
+    setView('auth')
   }
 
   function logout() {
     api.auth.clearSession()
     setSession(null)
+    setPendingFirstAccess(null)
     setView('marketing')
   }
 
-  function updateUser(user: AuthSession['user']) {
+  function updateUser(user: SessionUser) {
     if (!session) return
-    const updatedSession = { ...session, user }
+
+    const updatedSession = {
+      ...session,
+      user,
+    }
+
     api.auth.saveSession(updatedSession, true)
     setSession(updatedSession)
   }
 
   useEffect(() => {
     window.addEventListener('avantt:unauthorized', logout)
-    return () => window.removeEventListener('avantt:unauthorized', logout)
+
+    return () => {
+      window.removeEventListener('avantt:unauthorized', logout)
+    }
   }, [])
 
-  if (view === 'invitation' && invitationToken) {
+  if (view === 'status') {
+    return <TesteStatus />
+  }
+
+  if (view === 'invitation' && pendingFirstAccess) {
     return (
       <InvitationPage
-        token={invitationToken}
-        onAccepted={(nextSession) => {
-          api.auth.saveSession(nextSession, true)
-          setSession(nextSession)
-          window.history.replaceState({}, '', '/')
-          setView(getViewForSession(nextSession))
-        }}
+        email={pendingFirstAccess.email}
+        password={pendingFirstAccess.password}
+        onAccepted={finishFirstAccess}
+        onCancel={cancelFirstAccess}
       />
     )
   }
 
-  if (view === 'pending' && session) {
+  if (view === 'invitation') {
     return (
-      <AccessPendingPage
-        user={session.user}
-        dark={dark}
-        onToggleTheme={toggle}
-        onLinked={(nextSession) => {
-          api.auth.saveSession(nextSession, true)
-          setSession(nextSession)
-          setView(getViewForSession(nextSession))
-        }}
-        onLogout={logout}
-        onUserUpdate={updateUser}
+      <InvitationPage
+        email={conviteEmail}
+        onAccepted={finishFirstAccess}
+        onCancel={cancelFirstAccess}
+        allowPasswordSetup
       />
     )
   }
 
   if (view === 'dashboard') {
-    return session?.user.role === 'developer'
-      ? <DevDashboardApp user={session.user} onLogout={logout} onUserUpdate={updateUser} />
-      : <DashboardApp user={session?.user} onLogout={logout} onUserUpdate={updateUser} />
+    return session?.user.role === 'developer' ? (
+      <DevDashboardApp
+        user={session.user}
+        onLogout={logout}
+        onUserUpdate={updateUser}
+      />
+    ) : (
+      <DashboardApp
+        user={session?.user}
+        onLogout={logout}
+        onUserUpdate={updateUser}
+      />
+    )
   }
 
   if (view === 'auth') {

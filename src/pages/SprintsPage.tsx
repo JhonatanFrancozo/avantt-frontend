@@ -10,9 +10,7 @@ interface Props {
   sprints: Sprint[]
   projects: Project[]
   members: Member[]
-  onCreateSprint: () => void
   onEditSprint?: (sprint: Sprint) => void
-  canCreate?: boolean
 }
 
 export default function SprintsPage({ sprints, projects, members, onEditSprint }: Props) {
@@ -32,7 +30,6 @@ export default function SprintsPage({ sprints, projects, members, onEditSprint }
             )
           })}
         </div>
-        {/* O botão de criação está centralizado no PageHeader; removido aqui para evitar duplicação */}
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 16 }}>
@@ -63,7 +60,7 @@ export default function SprintsPage({ sprints, projects, members, onEditSprint }
                   <div style={{ display: 'flex', gap: 6, flexShrink: 0, alignItems: 'center' }}>
                     {sprint.daysDelayed > 0 && <span style={{ padding: '3px 8px', borderRadius: 4, fontSize: 11, fontWeight: 700, fontFamily: 'var(--font-mono)', backgroundColor: rawHex + '22', color: barColor }}>+{sprint.daysDelayed}d atraso</span>}
                     {daysLeft !== null && daysLeft >= 0 && sprint.daysDelayed === 0 && <span style={{ padding: '3px 8px', borderRadius: 4, fontSize: 11, fontFamily: 'var(--font-mono)', backgroundColor: c.blueLight, color: c.blue }}>{daysLeft}d restantes</span>}
-                    <span style={{ padding: '3px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600, backgroundColor: sprint.status === 'Finalizada' ? c.greenLight : c.blueLight, color: sprint.status === 'Finalizada' ? c.green : c.blue }}>{sprint.status}</span>
+                    <span style={{ padding: '3px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600, backgroundColor: sprint.status === 'Finalizada' ? c.greenLight : c.blueLight, color: sprint.status === 'Finalizada' ? c.green : c.blue }}>{sprint.status ?? (sprint.progress === 100 ? 'Finalizada' : 'Em andamento')}</span>
                     {onEditSprint && <button type="button" onClick={() => onEditSprint(sprint)} aria-label={`Editar ${sprint.name}`} style={{ padding: '4px 8px', borderRadius: 5, border: `1px solid ${c.border}`, backgroundColor: c.surface, color: c.textSecondary, fontSize: 11, cursor: 'pointer' }}>Editar</button>}
                   </div>
                 </div>

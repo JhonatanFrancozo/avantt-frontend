@@ -54,7 +54,7 @@ function mockMetrics(projectId: string | number): ProjectMetrics {
   const project = INIT_PROJECTS.find((item) => String(item.id) === String(projectId))
     ?? INIT_PROJECTS.find((item) => item.id.replace(/\D/g, '') === String(projectId))
   const tasks = project ? INIT_TASKS.filter((task) => task.project === project.name) : []
-  const completed = tasks.filter((task) => task.status === 'Concluída').length
+  const completed = tasks.filter((task) => task.status === 'concluída').length
   const statusNames = ['Planejada', 'Em andamento', 'Concluída', 'Bloqueada']
 
   return {
@@ -93,7 +93,7 @@ export async function obterMetricasProjeto(projectId: string | number): Promise<
     : overview
 
   return {
-    completionRate: numberFrom(completion, ['completionRate', 'rate', 'percentage', 'percentual', 'value']),
+    completionRate: numberFrom(completion, ['pctConclusao', 'pct_conclusao', 'completionRate', 'rate', 'percentage', 'percentual', 'value']),
     overdueCount: numberFrom(overview, ['overdueCount', 'atrasadas', 'totalAtrasadas']),
     hoursEstimated: numberFrom(overview, ['hoursEstimated', 'horasEstimadas']),
     statusDistribution: normalizePoints(

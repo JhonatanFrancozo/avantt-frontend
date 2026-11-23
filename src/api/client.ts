@@ -2,14 +2,13 @@ import axios from 'axios'
 import type { AxiosError } from 'axios'
 
 /**
- * O modo real é o padrão. Mockagem global só existe quando habilitada
- * explicitamente por ambiente; a demonstração usa um estado separado.
+ * A API real é o padrão. Ative os mocks com VITE_USE_MOCK=true ou na demonstração.
  */
 export const IS_MOCK = import.meta.env.VITE_USE_MOCK === 'true'
 
 export function isDemoMode() {
   try {
-    const raw = localStorage.getItem(SESSION_KEY) ?? sessionStorage.getItem(SESSION_KEY)
+    const raw = localStorage.getItem('avantt.session') ?? sessionStorage.getItem('avantt.session')
     return Boolean(raw && JSON.parse(raw).token?.startsWith('demo-'))
   } catch {
     return false
@@ -30,7 +29,8 @@ const SESSION_KEY = 'avantt.session'
 export function getStoredToken() {
   try {
     const raw = localStorage.getItem(SESSION_KEY) ?? sessionStorage.getItem(SESSION_KEY)
-    return raw ? JSON.parse(raw).token as string : null
+    const token = raw ? JSON.parse(raw).token : null
+    return typeof token === 'string' && token.trim() ? token : null
   } catch {
     return null
   }
@@ -47,10 +47,15 @@ api.interceptors.response.use(
   (err) => {
     console.error('[API]', err?.response?.status, err?.config?.url)
     const url = String(err?.config?.url ?? '')
-    const isAuthRequest = url.includes('/auth/login')
-      || url.includes('/auth/register')
-      || url.includes('/auth/register-organizacao')
-      || url.includes('/auth/convite/aceitar')
+    const isAuthRequest = [
+      '/auth/login',
+      '/auth/register',
+      '/auth/register-organizacao',
+      '/auth/convite/aceitar',
+      '/auth/password-reset/request',
+      '/auth/password-reset/confirm',
+    ].some((path) => url.includes(path))
+
     if (err?.response?.status === 401 && !isAuthRequest) {
       localStorage.removeItem(SESSION_KEY)
       sessionStorage.removeItem(SESSION_KEY)

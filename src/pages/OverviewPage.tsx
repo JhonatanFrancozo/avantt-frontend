@@ -18,7 +18,7 @@ export default function OverviewPage({ tasks, sprints, members }: Props) {
   const [sortKey, setSortKey] = useState<'daysDelayed' | 'priority'>('daysDelayed')
 
   const delayed = useMemo(() => tasks.filter((t) => t.daysDelayed > 0), [tasks])
-  const blocked = useMemo(() => tasks.filter((t) => t.status === 'Bloqueada'), [tasks])
+  const blocked = useMemo(() => tasks.filter((t) => t.status === 'bloqueada'), [tasks])
 
   const sorted = useMemo(() => {
     return [...delayed].sort((a, b) => {
@@ -47,7 +47,7 @@ export default function OverviewPage({ tasks, sprints, members }: Props) {
         <StatCard label="Tarefas Atrasadas" value={delayed.length} sub="em todos os projetos" color={c.red} icon="⏰" />
         <StatCard label="Sprints em Atraso" value={`${sprintsDelayed}/${sprints.length}`} sub={`Pior: +${sprints.length ? Math.max(0, ...sprints.map((s) => s.daysDelayed)) : 0}d`} color={c.amber} icon="S" />
         <StatCard label="Membros Sobrecarregados" value={overloaded} sub={`de ${members.length} na equipe`} color={c.purple} icon="👤" />
-        <StatCard label="Total de Tarefas" value={tasks.length} sub={`${tasks.filter((t) => t.status === 'Concluída').length} concluídas`} color={c.blue} icon="✓" />
+        <StatCard label="Total de Tarefas" value={tasks.length} sub={`${tasks.filter((t) => t.status === 'concluída').length} concluídas`} color={c.blue} icon="✓" />
       </div>
 
       <section>

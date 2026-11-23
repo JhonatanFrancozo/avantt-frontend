@@ -1,9 +1,32 @@
-export type TaskStatus = 'Planejada' | 'Em andamento' | 'Concluída' | 'Bloqueada'
-export type SprintStatus = 'Planejada' | 'Em andamento' | 'Finalizada'
+export type TaskStatus =
+  | 'planejada'
+  | 'em andamento'
+  | 'revisão'
+  | 'bloqueada'
+  | 'concluída'
+  | 'cancelada'
+
 export type TaskPriority = 'crítica' | 'alta' | 'média' | 'baixa'
 export type TaskType = 'Feature' | 'Bug' | 'Melhoria' | 'Infra'
-export type Page = 'overview' | 'projects' | 'sprints' | 'backlog' | 'team' | 'clients' | 'organization' | 'reports'
-export type DevPage = 'devoverview' | 'mytasks' | 'devsprints' | 'devprojects' | 'devbacklog' | 'devreports'
+
+export type Page =
+  | 'overview'
+  | 'projects'
+  | 'sprints'
+  | 'backlog'
+  | 'team'
+  | 'clients'
+  | 'organization'
+  | 'reports'
+
+export type DevPage =
+  | 'devoverview'
+  | 'mytasks'
+  | 'devsprints'
+  | 'devprojects'
+  | 'devbacklog'
+  | 'devreports'
+
 export type ActiveModal = 'project' | 'task' | 'sprint' | 'member' | null
 export type AppRole = 'manager' | 'developer'
 
@@ -17,7 +40,6 @@ export interface SessionUser {
   organizationId?: number
   organizationName?: string
   projectIds?: string[]
-  hasProjects?: boolean
   cpf?: string
   phone?: string
 }
@@ -25,9 +47,17 @@ export interface SessionUser {
 export interface AuthSession {
   token: string
   user: SessionUser
-  requiresFirstAccessValidation?: boolean
-  email?: string
 }
+
+export type LoginResult =
+  | {
+      requiresFirstAccessValidation: true
+      email: string
+    }
+  | {
+      requiresFirstAccessValidation: false
+      session: AuthSession
+    }
 
 export interface LoginPayload {
   email: string
@@ -42,6 +72,7 @@ export interface SignupPayload {
   password: string
   organizationName?: string
   cnpj?: string
+  phone?: string
 }
 
 export interface Organization {
@@ -49,6 +80,7 @@ export interface Organization {
   tradeName: string
   legalName: string
   cnpj: string
+  contact: string
   email: string
   phone: string
   createdAt?: string
@@ -58,9 +90,9 @@ export interface Client {
   id: number
   organizationId?: number
   name: string
-  document?: string
-  email?: string
-  phone?: string
+  document: string
+  email: string
+  phone: string
   createdAt?: string
 }
 
@@ -87,6 +119,7 @@ export interface Task {
   tags: string[]
   taskType?: TaskType
   hoursSpent?: number
+  startDate?: string
   progress?: number
   description?: string
 }
@@ -94,7 +127,8 @@ export interface Task {
 export interface Sprint {
   id: number
   projectId?: number
-  status: SprintStatus
+  statusId?: number
+  status?: SprintStatus
   teamIds?: number[]
   name: string
   project: string
@@ -109,13 +143,21 @@ export interface Sprint {
   goal: string
 }
 
+export type SprintStatus = 'Planejada' | 'Em andamento' | 'Finalizada'
+
 export interface Member {
   id: string
   name: string
   avatar: string
   color: string
   role: string
-  tasks: { total: number; done: number; delayed: number; blocked: number }
+  appRole?: AppRole
+  tasks: {
+    total: number
+    done: number
+    delayed: number
+    blocked: number
+  }
   projects: string[]
   projectIds?: string[]
   workload: number
@@ -125,6 +167,17 @@ export interface Member {
   isActive?: boolean
   inviteStatus?: 'pending' | 'accepted'
 }
+
+export type MemberSubmission =
+  | {
+      mode: 'create'
+      member: Omit<Member, 'id'>
+    }
+  | {
+      mode: 'link'
+      email: string
+      projectIds: string[]
+    }
 
 export interface CreateUserRequest {
   nome: string
@@ -139,10 +192,19 @@ export interface CreateUserRequest {
   projeto_ids: string[]
 }
 
-export type UpdateUserRequest = Partial<Pick<
-  CreateUserRequest,
-  'nome' | 'email' | 'cpf' | 'telefone' | 'cargo' | 'papel' | 'is_ativo' | 'projeto_ids'
->>
+export type UpdateUserRequest = Partial<
+  Pick<
+    CreateUserRequest,
+    | 'nome'
+    | 'email'
+    | 'cpf'
+    | 'telefone'
+    | 'cargo'
+    | 'papel'
+    | 'is_ativo'
+    | 'projeto_ids'
+  >
+>
 
 export interface Project {
   id: string
@@ -152,14 +214,28 @@ export interface Project {
   color: string
   description: string
   status: string
-  statusName?: string
   startDate: string
   endDate: string
   progress: number
-  sprints: { total: number; done: number; active: number; delayed: number }
-  tasks: { total: number; done: number; delayed: number; blocked: number; cancelled: number }
+  sprints: {
+    total: number
+    done: number
+    active: number
+    delayed: number
+  }
+  tasks: {
+    total: number
+    done: number
+    delayed: number
+    blocked: number
+    cancelled: number
+  }
   team: string[]
   teamIds?: number[]
   risks: string[]
-  milestones: { name: string; date: string; done: boolean }[]
+  milestones: {
+    name: string
+    date: string
+    done: boolean
+  }[]
 }

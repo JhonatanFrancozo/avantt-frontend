@@ -9,36 +9,24 @@ interface Props {
   name?: string
   required?: boolean
   autoComplete?: string
-  inputMode?: 'none' | 'text' | 'tel' | 'url' | 'email' | 'numeric' | 'decimal' | 'search'
-  maxLength?: number
+  readOnly?: boolean
 }
 
-export default function Inp({
-  value,
-  onChange,
-  placeholder,
-  type = 'text',
-  id,
-  name,
-  required,
-  autoComplete,
-  inputMode,
-  maxLength,
-}: Props) {
+export default function Inp({ value, onChange, placeholder, type = 'text', id, name, required, autoComplete, readOnly }: Props) {
   return (
     <input
       id={id}
       name={name}
       type={type}
+      lang={type === 'date' ? 'pt-BR' : undefined}
       value={value}
       required={required}
       autoComplete={autoComplete}
-      inputMode={inputMode}
-      maxLength={maxLength}
+      readOnly={readOnly}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
       style={inputStyle}
-      className="w-full rounded-lg border border-border bg-surface px-3.5 py-3 text-sm text-text-primary outline-none transition placeholder:text-text-muted focus:border-blue focus:ring-4 focus:ring-blue-light"
+      className={`w-full rounded-lg border border-border bg-surface px-3.5 py-3 text-sm text-text-primary outline-none transition placeholder:text-text-muted focus:border-blue focus:ring-4 focus:ring-blue-light ${readOnly ? 'cursor-not-allowed opacity-75' : ''}`}
     />
   )
 }

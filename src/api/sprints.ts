@@ -1,70 +1,77 @@
 /**
  * API de sprints — tabela `sprint` do schema.
- * IS_MOCK=true  → mock/db.ts
- * IS_MOCK=false → axios para /api/sprints
+ * Modo de demonstração/mock → mock/db.ts
+ * Uso normal → axios para /api/sprints
  */
 import { api, shouldUseMock } from './client'
 import * as mock from './mock/db'
-import { listarStatus } from './catalogos'
 import type { Sprint, SprintStatus } from '../types'
-import { normalizeText } from '../utils'
+import { listarStatus } from './catalogos'
 
-async function getSprintStatusId(status: SprintStatus): Promise<number> {
-  const catalogName = status === 'Finalizada' ? 'Concluída' : status
-  const catalog = await listarStatus()
-  const item = catalog.find((entry) => entry.nome.toLocaleLowerCase('pt-BR') === catalogName.toLocaleLowerCase('pt-BR'))
-  if (!item) throw new Error(`O status "${catalogName}" não está disponível para a sprint.`)
-  return item.id
+function normalizeSprintStatus(status: string) {
+  const normalized = status
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLocaleLowerCase('pt-BR')
+
+  return normalized === 'finalizada' ? 'concluida' : normalized
 }
 
-function normalizeSprint(sprint: Sprint): Sprint {
-  const status = ['Planejada', 'Em andamento', 'Finalizada'].find((item) => item === sprint.status) as SprintStatus | undefined
-  return {
-    ...sprint,
-    status: status ?? 'Planejada',
-    name: normalizeText(sprint.name),
-    project: normalizeText(sprint.project),
-    goal: normalizeText(sprint.goal),
-    projectId: sprint.projectId == null ? undefined : Number(sprint.projectId),
-    teamIds: Array.isArray(sprint.teamIds) ? sprint.teamIds.map(Number) : [],
-    team: Array.isArray(sprint.team) ? sprint.team.map(normalizeText) : [],
+async function resolveStatusId(status: SprintStatus = 'Em andamento') {
+  const statuses = await listarStatus()
+  const expectedStatus = normalizeSprintStatus(status)
+  const statusId = statuses.find(
+    (item) => normalizeSprintStatus(item.nome) === expectedStatus,
+  )?.id
+
+  if (statusId == null) {
+    throw new Error(`Status de sprint "${status}" não encontrado.`)
   }
+
+  return statusId
 }
 
 export async function listarSprints(projetoId?: string): Promise<Sprint[]> {
   if (shouldUseMock()) return mock.listarSprints(projetoId)
   const params = projetoId ? { projeto_id: projetoId } : undefined
   const { data } = await api.get<Sprint[]>('/sprints', { params })
-  return data.map(normalizeSprint)
+  return data
 }
 
 export async function criarSprint(body: Omit<Sprint, 'id'>): Promise<Sprint> {
   if (shouldUseMock()) return mock.criarSprint(body)
-  const statusId = await getSprintStatusId(body.status)
+  const statusId = body.statusId ?? await resolveStatusId(body.status)
   const { data } = await api.post<Sprint>('/sprints', {
     name: body.name,
     projectId: body.projectId,
-    goal: body.goal,
-    statusId,
     startDate: body.startDate,
     endDate: body.endDate,
+    statusId: body.statusId ?? statusId,
     team: body.teamIds ?? [],
+    goal: body.goal,
   })
-  return normalizeSprint(data)
+  return data
 }
 
-export async function atualizarSprint(id: number, body: Omit<Sprint, 'id'>): Promise<Sprint> {
-  if (shouldUseMock()) return mock.atualizarSprint(id, body)
-  const statusId = await getSprintStatusId(body.status)
-  const { data } = await api.put<Sprint>(`/sprints/${id}`, {
+export async function atualizarSprint(
+  sprintId: number,
+  body: Omit<Sprint, 'id'>,
+): Promise<Sprint> {
+  if (shouldUseMock()) return mock.atualizarSprint(sprintId, body)
+
+  const statusId = body.statusId ?? await resolveStatusId(body.status)
+  const { data } = await api.put<Sprint>(`/sprints/${sprintId}`, {
     name: body.name,
-    goal: body.goal,
-    statusId,
+    projectId: body.projectId,
     startDate: body.startDate,
     endDate: body.endDate,
+    statusId,
     team: body.teamIds ?? [],
+    goal: body.goal,
   })
-  return normalizeSprint(data)
+
+  return data
 }
 
 export async function listarUsuariosDaSprint(sprintId: number) {

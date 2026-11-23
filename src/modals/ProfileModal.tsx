@@ -57,8 +57,8 @@ export default function ProfileModal({
     try {
       const updated = await api.usuarios.atualizarMeuPerfil({
         email: email.trim().toLowerCase(),
-        cpf,
-        telefone: phone,
+        cpf: cpf || undefined,
+        telefone: phone || undefined,
       })
       if (newPassword) {
         await api.usuarios.alterarMinhaSenha({ senhaAtual: currentPassword, novaSenha: newPassword })
@@ -97,7 +97,7 @@ export default function ProfileModal({
           <div className="rounded-xl border border-border bg-bg p-4">
             <div className="text-xs font-semibold text-text-primary">{roleLabels[user.role]}</div>
             <div className="mt-1 text-xs text-text-muted">
-              {user.organizationName ?? 'Sem organização vinculada'}
+              {user.organizationName ?? (user.organizationId ? 'Organização vinculada' : 'Sem organização vinculada')}
             </div>
           </div>
         </div>
