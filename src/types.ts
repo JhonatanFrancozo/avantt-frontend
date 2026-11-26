@@ -72,7 +72,6 @@ export interface SignupPayload {
   password: string
   organizationName?: string
   cnpj?: string
-  phone?: string
 }
 
 export interface Organization {
@@ -88,12 +87,22 @@ export interface Organization {
 
 export interface Client {
   id: number
-  organizationId?: number
+  organizationId: number
   name: string
   document: string
   email: string
   phone: string
   createdAt?: string
+  defaultUser?: {
+    name: string
+    email: string
+    cpf?: string
+    phone?: string
+    jobTitle?: string
+    status: 'invite-pending' | 'active'
+    role: 'manager'
+    projectIds: string[]
+  }
 }
 
 export interface Task {
@@ -119,7 +128,6 @@ export interface Task {
   tags: string[]
   taskType?: TaskType
   hoursSpent?: number
-  startDate?: string
   progress?: number
   description?: string
 }
@@ -128,7 +136,6 @@ export interface Sprint {
   id: number
   projectId?: number
   statusId?: number
-  status?: SprintStatus
   teamIds?: number[]
   name: string
   project: string
@@ -143,15 +150,12 @@ export interface Sprint {
   goal: string
 }
 
-export type SprintStatus = 'Planejada' | 'Em andamento' | 'Finalizada'
-
 export interface Member {
   id: string
   name: string
   avatar: string
   color: string
   role: string
-  appRole?: AppRole
   tasks: {
     total: number
     done: number
@@ -167,17 +171,6 @@ export interface Member {
   isActive?: boolean
   inviteStatus?: 'pending' | 'accepted'
 }
-
-export type MemberSubmission =
-  | {
-      mode: 'create'
-      member: Omit<Member, 'id'>
-    }
-  | {
-      mode: 'link'
-      email: string
-      projectIds: string[]
-    }
 
 export interface CreateUserRequest {
   nome: string

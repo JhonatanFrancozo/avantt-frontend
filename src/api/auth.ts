@@ -8,27 +8,12 @@ import type {
 
 const SESSION_KEY = 'avantt.session'
 
-interface LoginResponse {
-  token?: string | null
-  user?: AuthSession['user'] | null
-  requiresFirstAccessValidation?: boolean
-  email?: string | null
-}
-
 function normalizeSession(session: AuthSession): AuthSession {
   const rawUser = session.user as AuthSession['user'] & {
     organizacaoId?: number | string | null
   }
 
   const role = String(rawUser.role).toLowerCase()
-  const papel = String(
-    (rawUser as AuthSession['user'] & { papel?: string }).papel ??
-    ''
-  ).toLowerCase()
-  const cargo = String(
-    (rawUser as AuthSession['user'] & { cargo?: string }).cargo ??
-    ''
-  ).toLowerCase()
 
   const organizationIdRaw =
     rawUser.organizationId ?? rawUser.organizacaoId
@@ -47,11 +32,6 @@ function normalizeSession(session: AuthSession): AuthSession {
           ? organizationId
           : undefined,
       role:
-        papel.includes('developer') ||
-        papel.includes('desenvolv') ||
-        cargo.includes('desenvolv') ||
-        cargo.includes('developer') ||
-        cargo.includes('colaborador') ||
         role.includes('desenvolv') ||
         role.includes('developer') ||
         role.includes('colaborador')
@@ -94,16 +74,6 @@ function mockSession(payload: {
   }
 }
 
-export function createDemoSession(): AuthSession {
-  const session = mockSession({
-    email: 'demo@avantt.com',
-    name: 'Gustavo Silva',
-    role: 'manager',
-  })
-
-  return { ...session, token: `demo-${Date.now()}` }
-}
-
 export async function login(
   payload: LoginPayload
 ): Promise<LoginResult> {
@@ -114,7 +84,7 @@ export async function login(
     }
   }
 
-  const { data } = await api.post<LoginResponse>(
+  const { data } = await api.post<LoginResult | AuthSession>(
     '/auth/login',
     {
       email: payload.email,
@@ -122,20 +92,18 @@ export async function login(
     }
   )
 
-  if (data.requiresFirstAccessValidation === true) {
+  const response = data as LoginResult & Partial<AuthSession>
+
+  if (response.requiresFirstAccessValidation === true) {
     return {
       requiresFirstAccessValidation: true,
-      email: data.email ?? payload.email,
+      email: response.email ?? payload.email,
     }
   }
 
-  if (!data.token || !data.user) {
-    throw new Error('O servidor retornou uma sessão de login inválida.')
-  }
-
   const session = normalizeSession({
-    token: data.token,
-    user: data.user,
+    token: response.token as string,
+    user: response.user as AuthSession['user'],
   })
 
   return {
@@ -169,16 +137,13 @@ export async function acceptInvitation(payload: {
 
 export async function signup(
   payload: SignupPayload
-): Promise<LoginResult> {
+): Promise<AuthSession> {
   if (IS_MOCK) {
-    return {
-      requiresFirstAccessValidation: false,
-      session: mockSession({
-        ...payload,
-        role: payload.accountType === 'organization' ? 'manager' : 'developer',
-        linked: payload.accountType === 'organization',
-      }),
-    }
+    return mockSession({
+      ...payload,
+      role: payload.accountType === 'organization' ? 'manager' : 'developer',
+      linked: payload.accountType === 'organization',
+    })
   }
 
   const endpoint =
@@ -194,9 +159,6 @@ export async function signup(
           password: payload.password,
           organizationName: payload.organizationName,
           cnpj: payload.cnpj,
-          contact: payload.name,
-          emailContato: payload.email,
-          phone: payload.phone,
         }
       : {
           name: payload.name,
@@ -205,13 +167,9 @@ export async function signup(
           role: 'Colaborador',
         }
 
-  await api.post(endpoint, request)
+  const { data } = await api.post<AuthSession>(endpoint, request)
 
-  return login({
-    email: payload.email,
-    password: payload.password,
-    remember: true,
-  })
+  return normalizeSession(data)
 }
 
 export async function linkOrganization(
@@ -270,15 +228,9 @@ export function loadSession(): AuthSession | null {
       localStorage.getItem(SESSION_KEY) ??
       sessionStorage.getItem(SESSION_KEY)
 
-    if (!raw) return null
-
-    const session = normalizeSession(JSON.parse(raw) as AuthSession)
-    if (!IS_MOCK && session.token.startsWith('mock-')) {
-      clearSession()
-      return null
-    }
-
-    return session
+    return raw
+      ? normalizeSession(JSON.parse(raw) as AuthSession)
+      : null
   } catch {
     clearSession()
     return null
