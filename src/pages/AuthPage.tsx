@@ -1,4 +1,3 @@
-
 import { useState, type FormEvent } from 'react'
 import { BtnPrimary } from '../components/atoms'
 import { Field, Inp } from '../components/form'
@@ -7,6 +6,7 @@ import ProductIcon from '../components/ProductIcon'
 import { siteCopy as copy } from '../content'
 import { getApiErrorMessage } from '../api'
 import { requestPasswordReset } from '../api/auth'
+import { formatCnpj, validateEmail, validatePassword } from '../utils'
 import type { LoginPayload, SignupPayload } from '../types'
 
 type AuthMode = 'login' | 'signup'
@@ -26,16 +26,6 @@ type FormErrors = Partial<
 >
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-
-function formatCnpj(value: string) {
-  const digits = value.replace(/\D/g, '').slice(0, 14)
-
-  return digits
-    .replace(/^(\d{2})(\d)/, '$1.$2')
-    .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
-    .replace(/\.(\d{3})(\d)/, '.$1/$2')
-    .replace(/(\d{4})(\d)/, '$1-$2')
-}
 
 export default function AuthPage({
   initialMode,
@@ -67,15 +57,23 @@ export default function AuthPage({
 
     const nextErrors: FormErrors = {}
 
-    if (!emailPattern.test(email.trim())) {
-      nextErrors.email = copy.auth.errors.email
-    }
+    if (isLogin) {
+      // Login: validação leve, para não bloquear usuários já cadastrados
+      if (!emailPattern.test(email.trim())) {
+        nextErrors.email = copy.auth.errors.email
+      }
 
-    if (password.length < 8) {
-      nextErrors.password = copy.auth.errors.password
-    }
+      if (!password) {
+        nextErrors.password = copy.auth.errors.password
+      }
+    } else {
+      // Cadastro: regras completas
+      const emailError = validateEmail(email)
+      if (emailError) nextErrors.email = emailError
 
-    if (!isLogin) {
+      const passwordError = validatePassword(password)
+      if (passwordError) nextErrors.password = passwordError
+
       if (name.trim().length < 3) {
         nextErrors.name = copy.auth.errors.name
       }

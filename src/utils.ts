@@ -78,3 +78,49 @@ export function delayHex(days: number): string {
 export function workloadColor(value: number): string {
   return value >= 85 ? c.red : value >= 70 ? c.amber : c.green
 }
+
+const ALLOWED_EMAIL_DOMAINS = [
+  'gmail.com',
+  'hotmail.com',
+  'hotmail.com.br',
+  'outlook.com',
+  'outlook.com.br',
+]
+
+/** Retorna a mensagem de erro, ou null se o e-mail for válido */
+export function validateEmail(email: string): string | null {
+  const value = email.trim().toLowerCase()
+
+  if (!value) return 'Informe o e-mail.'
+
+  const match = /^[a-z0-9._%+-]+@([a-z0-9.-]+\.[a-z]{2,})$/.exec(value)
+
+  if (!match || !ALLOWED_EMAIL_DOMAINS.includes(match[1])) {
+    return 'Use um e-mail válido do Gmail, Hotmail ou Outlook.'
+  }
+
+  return null
+}
+
+/** Retorna a mensagem de erro, ou null se a senha for válida */
+export function validatePassword(password: string): string | null {
+  if (!password) return 'Informe a senha.'
+
+  if (password.length < 8) {
+    return 'A senha deve ter pelo menos 8 caracteres.'
+  }
+
+  if (/^\d+$/.test(password)) {
+    return 'A senha não pode conter apenas números.'
+  }
+
+  if (!/[A-Za-z]/.test(password)) {
+    return 'A senha deve conter pelo menos uma letra.'
+  }
+
+  if (!/\d/.test(password)) {
+    return 'A senha deve conter pelo menos um número.'
+  }
+
+  return null
+}

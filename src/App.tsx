@@ -7,6 +7,7 @@ import DashboardApp from './DashboardApp'
 import DevDashboardApp from './DevDashboardApp'
 import * as api from './api'
 import { confirmPasswordReset } from './api/auth'
+import { validatePassword } from './utils'
 import type {
   AuthSession,
   LoginPayload,
@@ -48,8 +49,10 @@ function ResetPasswordPage({
     event.preventDefault()
     setError('')
 
-    if (password.length < 8) {
-      setError('A senha deve ter pelo menos 8 caracteres.')
+    const passwordError = validatePassword(password)
+
+    if (passwordError) {
+      setError(passwordError)
       return
     }
 
