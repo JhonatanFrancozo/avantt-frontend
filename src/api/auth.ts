@@ -205,6 +205,47 @@ export async function linkOrganization(
   return normalizeSession(data)
 }
 
+/**
+ * Solicita o envio do e-mail para recuperação de senha.
+ */
+export async function requestPasswordReset(email: string): Promise<void> {
+  if (IS_MOCK) {
+    throw new Error(
+      'A recuperação de senha exige a conexão com o backend. Desative o modo mock para continuar.'
+    )
+  }
+
+  await api.post('/auth/password-reset/request', {
+    email: email.trim().toLowerCase(),
+  })
+}
+
+/**
+ * Confirma a redefinição da senha usando o token recebido por e-mail.
+ */
+export async function confirmPasswordReset(
+  token: string,
+  newPassword: string
+): Promise<boolean> {
+  if (IS_MOCK) {
+    throw new Error(
+      'A recuperação de senha exige a conexão com o backend. Desative o modo mock para continuar.'
+    )
+  }
+
+  const { data } = await api.post<boolean>(
+    '/auth/password-reset/confirm',
+    {
+      token: token.trim(),
+      newPassword,
+    }
+  )
+
+  // O backend atualizado retorna true.
+  // O retorno vazio também é aceito para compatibilidade com a versão anterior.
+  return data === true || data === undefined || data === null
+}
+
 export function saveSession(
   session: AuthSession,
   remember: boolean
