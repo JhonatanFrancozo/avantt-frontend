@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from 'react'
 import { c, STATUS_META } from '../../theme'
 import TaskDetailModal from '../../modals/TaskDetailModal'
@@ -45,20 +44,18 @@ const PRI: Record<TaskPriority, { dot: string; label: string }> = {
 const STATUS_COLS: { status: TaskStatus; label: string }[] = [
   { status: 'planejada', label: 'Planejado' },
   { status: 'em andamento', label: 'Em andamento' },
-  { status: 'revisão', label: 'Revisão' },
   { status: 'bloqueada', label: 'Bloqueada' },
   { status: 'concluída', label: 'Concluída' },
-  { status: 'cancelada', label: 'Cancelada' },
 ]
 
 // Atenção: confirme os IDs com o cadastro de status do backend.
 const STATUS_IDS: Record<TaskStatus, number> = {
   'planejada': 1,
   'em andamento': 2,
-  'revisão': 5,
-  'bloqueada': 4,
+  'revisão': 3,
   'concluída': 3,
-  'cancelada': 6,
+  'bloqueada': 4,
+  'cancelada': 4,
 }
 
 const PRIORITIES: TaskPriority[] = ['crítica', 'alta', 'média', 'baixa']
@@ -70,7 +67,7 @@ function StatusSelector({
   onUpdateStatus,
 }: {
   task: Task
-  onUpdateStatus: (taskId: string, statusId: number, blockedBy?: string, startDate?: string, hoursSpent?: number) => Promise<void>
+  onUpdateStatus: (taskId: string, statusId: number) => Promise<void>
 }) {
   const [open, setOpen] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -80,10 +77,8 @@ function StatusSelector({
   const statuses: TaskStatus[] = [
     'planejada',
     'em andamento',
-    'revisão',
     'bloqueada',
     'concluída',
-    'cancelada',
   ]
 
   async function handleStatusChange(status: TaskStatus) {
@@ -94,16 +89,7 @@ function StatusSelector({
 
     try {
       setSaving(true)
-      if (status === 'bloqueada') {
-        const reason = window.prompt('Informe o motivo do bloqueio:')
-        if (!reason?.trim()) {
-          setOpen(false)
-          return
-        }
-        await onUpdateStatus(task.id, STATUS_IDS[status], reason.trim())
-      } else {
-        await onUpdateStatus(task.id, STATUS_IDS[status])
-      }
+      await onUpdateStatus(task.id, STATUS_IDS[status])
       setOpen(false)
     } catch (error) {
       console.error('Erro ao atualizar status:', error)
@@ -206,7 +192,7 @@ function KanbanCard({
   onOpen,
 }: {
   task: Task
-  onUpdateStatus: (taskId: string, statusId: number, blockedBy?: string, startDate?: string, hoursSpent?: number) => Promise<void>
+  onUpdateStatus: (taskId: string, statusId: number) => Promise<void>
   onOpen: (t: Task) => void
 }) {
   const pri = PRI[task.priority]
@@ -280,7 +266,7 @@ function KanbanCard({
       )}
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 11, color: c.textMuted }}>
-        <span>{task.plannedEnd.split('-').reverse().join('/')}</span>
+        <span>{task.plannedEnd.split('-').slice(1).join('/')}/{task.plannedEnd.slice(2, 4)}</span>
         <span style={{ color: isOver ? '#E07B2A' : c.textMuted }}>
           {task.hoursSpent ?? 0}h / {task.estimatedHours}h
         </span>
@@ -301,7 +287,7 @@ function ListRow({
   onOpen,
 }: {
   task: Task
-  onUpdateStatus: (taskId: string, statusId: number, blockedBy?: string, startDate?: string, hoursSpent?: number) => Promise<void>
+  onUpdateStatus: (taskId: string, statusId: number) => Promise<void>
   onOpen: (t: Task) => void
 }) {
   const pri = PRI[task.priority]
@@ -394,7 +380,7 @@ interface Props {
   tasks: Task[]
   projects: Project[]
   onUpdateTask: (task: Task) => Promise<void>
-  onUpdateStatus: (taskId: string, statusId: number, blockedBy?: string, startDate?: string, hoursSpent?: number) => Promise<void>
+  onUpdateStatus: (taskId: string, statusId: number) => Promise<void>
 }
 
 export default function MyTasksPage({
@@ -419,13 +405,7 @@ export default function MyTasksPage({
   async function updateTaskStatusFromModal(updatedTask: Task) {
     const statusId = STATUS_IDS[updatedTask.status]
 
-    await onUpdateStatus(
-      updatedTask.id,
-      statusId,
-      updatedTask.blockedBy ?? undefined,
-      updatedTask.startDate,
-      updatedTask.hoursSpent
-    )
+    await onUpdateStatus(updatedTask.id, statusId)
 
     setDetailTask(null)
   }
@@ -457,7 +437,7 @@ export default function MyTasksPage({
     return r
   }, [tasks])
 
-  const filterPills = ['Todos', 'planejada', 'em andamento', 'revisão', 'bloqueada', 'concluída', 'cancelada']
+  const filterPills = ['Todos', 'planejada', 'em andamento', 'bloqueada', 'concluída']
   const inProgress = tasks.filter((t) => t.status === 'em andamento').length
 
   return (
@@ -636,7 +616,7 @@ export default function MyTasksPage({
 
       {/* Kanban */}
       {view === 'kanban' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, minmax(220px, 1fr))', gap: 14, flex: 1, overflowX: 'auto', alignItems: 'start', paddingBottom: 8 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, flex: 1 }}>
           {STATUS_COLS.map(({ status, label }) => {
             const meta = STATUS_META[status]
             const colTasks = filtered.filter((t) => t.status === status)

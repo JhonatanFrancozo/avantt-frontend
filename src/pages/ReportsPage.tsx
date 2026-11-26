@@ -1,4 +1,3 @@
-
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { c, STATUS_OPTIONS, STATUS_META, PRIORITY_META } from '../theme'
 import { Avatar, StatCard, BtnPrimary } from '../components/atoms'
@@ -16,7 +15,6 @@ interface Props {
   projects: Project[]
   members: Member[]
   sprints: Sprint[]
-  developerView?: boolean
 }
 
 function normalizeName(value: unknown): string {
@@ -147,7 +145,6 @@ export default function ReportsPage({
   projects,
   members,
   sprints,
-  developerView = false,
 }: Props) {
   const [selectedProjectId, setSelectedProjectId] = useState(
     String(projects[0]?.id ?? '')
@@ -322,47 +319,6 @@ export default function ReportsPage({
     completionRate,
     sprintDelayRate,
   } = stats
-
-  if (developerView) {
-    const ownDelayed = tasks
-      .filter(task => task.daysDelayed > 0)
-      .sort((a, b) => b.daysDelayed - a.daysDelayed)
-      .slice(0, 6)
-
-    return (
-      <div style={{ padding: '24px 28px', flex: 1, display: 'flex', flexDirection: 'column', gap: 18 }}>
-        <section className="rounded-xl border border-border bg-surface p-5">
-          <div className="mb-4">
-            <div className="text-base font-bold text-text-primary">Insights das minhas tarefas</div>
-            <p className="mt-1 text-xs leading-5 text-text-muted">
-              Indicadores pessoais sobre prioridade, prazos, bloqueios e conclusão das minhas entregas.
-            </p>
-          </div>
-          <div className="grid gap-3 md:grid-cols-4">
-            <StatCard label="Taxa de conclusão" value={`${completionRate}%`} sub={`${tasks.filter(task => task.status === 'concluída').length} concluídas`} color={c.green} />
-            <StatCard label="Em andamento" value={tasks.filter(task => task.status === 'em andamento').length} sub="tarefas abertas" color={c.blue} />
-            <StatCard label="Bloqueadas" value={tasks.filter(task => task.status === 'bloqueada').length} sub="dependências atuais" color={c.red} />
-            <StatCard label="Atrasadas" value={ownDelayed.length} sub={`atraso médio: ${avgDelay}d`} color={c.amber} />
-          </div>
-        </section>
-
-        <section className="grid gap-3 md:grid-cols-2">
-          {ownDelayed.map(task => (
-            <div key={task.id} className="rounded-xl border border-border bg-surface p-4">
-              <div className="text-xs font-mono text-text-muted">{task.id}</div>
-              <div className="mt-1 text-sm font-semibold text-text-primary">{task.title}</div>
-              <div className="mt-2 text-xs text-red">Atraso de {task.daysDelayed} dia{task.daysDelayed === 1 ? '' : 's'}</div>
-            </div>
-          ))}
-          {ownDelayed.length === 0 && (
-            <div className="col-span-2 rounded-xl border border-border bg-surface py-10 text-center text-xs text-text-muted">
-              Nenhuma tarefa atrasada no momento.
-            </div>
-          )}
-        </section>
-      </div>
-    )
-  }
 
   return (
     <div
@@ -804,53 +760,66 @@ export default function ReportsPage({
                 key={sprint.id}
                 style={{
                   display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  marginBottom: 7,
+                  flexDirection: 'column',
+                  gap: 5,
+                  marginBottom: 13,
+                  paddingBottom: 10,
+                  borderBottom: `1px solid ${c.border}`,
                 }}
               >
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div
-                    style={{
-                      fontSize: 11,
-                      color: c.textPrimary,
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {sprint.name}
-                  </div>
-
-                  <div
-                    style={{
-                      fontSize: 10,
-                      color: c.textMuted,
-                    }}
-                  >
-                    {sprint.project}
-                  </div>
-                </div>
-
-                <ProgressBar
-                  value={sprint.progress}
-                  color={sprint.daysDelayed > 0 ? c.red : c.green}
-                  height={4}
-                />
-
-                <span
+                <div
                   style={{
-                    fontSize: 11,
-                    fontFamily: 'var(--font-mono)',
-                    fontWeight: 700,
-                    color: sprint.daysDelayed > 0 ? c.red : c.green,
-                    width: 36,
-                    textAlign: 'right',
-                    flexShrink: 0,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: c.textPrimary,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
                   }}
                 >
-                  {sprint.progress}%
-                </span>
+                  {sprint.name}
+                </div>
+
+                <div
+                  style={{
+                    fontSize: 10,
+                    color: c.textMuted,
+                  }}
+                >
+                  {sprint.project}
+                </div>
+
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    width: '100%',
+                    marginTop: 3,
+                  }}
+                >
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <ProgressBar
+                      value={sprint.progress}
+                      color={sprint.daysDelayed > 0 ? c.red : c.green}
+                      height={5}
+                    />
+                  </div>
+
+                  <span
+                    style={{
+                      fontSize: 11,
+                      fontFamily: 'var(--font-mono)',
+                      fontWeight: 700,
+                      color: sprint.daysDelayed > 0 ? c.red : c.green,
+                      width: 36,
+                      textAlign: 'right',
+                      flexShrink: 0,
+                    }}
+                  >
+                    {sprint.progress}%
+                  </span>
+                </div>
               </div>
             ))}
           </div>
