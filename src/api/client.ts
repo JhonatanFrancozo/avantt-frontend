@@ -1,5 +1,4 @@
 import axios from 'axios'
-import type { AxiosError } from 'axios'
 
 /**
  * A API real é o padrão. Ative os mocks com VITE_USE_MOCK=true ou na demonstração.
@@ -65,20 +64,49 @@ api.interceptors.response.use(
   },
 )
 
+type ApiErrorPayload = {
+  message?: string
+  error?: string
+  details?: unknown
+}
+
+type ApiErrorDetail = {
+  field?: string
+  message: string
+}
+
+export function getApiErrorDetails(error: unknown): ApiErrorDetail[] {
+  if (!axios.isAxiosError<ApiErrorPayload>(error)) return []
+
+  const details = error.response?.data?.details
+  if (!Array.isArray(details)) return []
+
+  return details.filter((detail): detail is ApiErrorDetail => {
+    if (
+      typeof detail !== 'object' ||
+      detail === null ||
+      !('message' in detail) ||
+      typeof detail.message !== 'string'
+    ) {
+      return false
+    }
+
+    return !('field' in detail) || typeof detail.field === 'string'
+  })
+}
+
 export function getApiErrorMessage(error: unknown) {
-  if (error instanceof Error && !('response' in error)) return error.message
-  const apiError = error as AxiosError<{
-    message?: string
-    error?: string
-    details?: { field?: string; message?: string }[]
-  }>
-  if (!apiError.response) return 'Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.'
-  if (apiError.response.data?.details?.length) {
-    const detailsMessage = apiError.response.data.details
-      .map((detail) => detail.message)
-      .filter(Boolean)
-      .join(' ')
-    if (detailsMessage) return detailsMessage
+  if (error instanceof Error && !axios.isAxiosError(error)) return error.message
+  if (!axios.isAxiosError<ApiErrorPayload>(error) || !error.response) {
+    return 'Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.'
   }
-  return apiError.response.data?.message ?? apiError.response.data?.error ?? 'Não foi possível concluir a solicitação.'
+
+  const detailsMessage = getApiErrorDetails(error)
+    .map((detail) => detail.message)
+    .join(' ')
+  if (detailsMessage) return detailsMessage
+
+  return error.response.data?.message
+    ?? error.response.data?.error
+    ?? 'Não foi possível concluir a solicitação.'
 }

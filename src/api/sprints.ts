@@ -11,6 +11,24 @@ import * as mock from './mock/db'
 import type { Sprint } from '../types'
 import { listarStatus } from './catalogos'
 
+type SprintSubmission = Omit<Sprint, 'id'> & { status?: string }
+
+async function resolveStatusId(body: SprintSubmission) {
+  const statuses = await listarStatus()
+  const selectedStatus = body.status?.trim().toLocaleLowerCase('pt-BR')
+  const catalogStatus = selectedStatus === 'finalizada'
+    ? 'concluída'
+    : selectedStatus
+  const statusId = statuses.find(
+    item => item.nome.toLocaleLowerCase('pt-BR') === catalogStatus
+  )?.id
+  const defaultStatusId = statuses.find(
+    item => item.nome.toLocaleLowerCase('pt-BR') === 'em andamento'
+  )?.id
+
+  return body.statusId ?? statusId ?? defaultStatusId
+}
+
 export async function listarSprints(projetoId?: string): Promise<Sprint[]> {
   if (IS_MOCK) {
     return mock.listarSprints(projetoId)
@@ -27,25 +45,44 @@ export async function listarSprints(projetoId?: string): Promise<Sprint[]> {
 }
 
 export async function criarSprint(
-  body: Omit<Sprint, 'id'>
+  body: SprintSubmission
 ): Promise<Sprint> {
   if (IS_MOCK) {
     return mock.criarSprint(body)
   }
 
-  const statuses = await listarStatus()
-
-  const statusId = statuses.find(
-    item => item.nome.toLocaleLowerCase('pt-BR') === 'em andamento'
-  )?.id
+  const statusId = await resolveStatusId(body)
 
   const { data } = await api.post<Sprint>('/sprints', {
     name: body.name,
     projectId: body.projectId,
     startDate: body.startDate,
     endDate: body.endDate,
-    statusId: body.statusId ?? statusId,
+    statusId,
     team: body.teamIds ?? [],
+    goal: body.goal,
+  })
+
+  return data
+}
+
+export async function atualizarSprint(
+  id: number,
+  body: SprintSubmission
+): Promise<Sprint> {
+  if (IS_MOCK) {
+    return mock.atualizarSprint(id, body)
+  }
+
+  const statusId = await resolveStatusId(body)
+  const { data } = await api.put<Sprint>(`/sprints/${id}`, {
+    name: body.name,
+    projectId: body.projectId,
+    startDate: body.startDate,
+    endDate: body.endDate,
+    statusId,
+    team: body.teamIds,
+    goal: body.goal,
   })
 
   return data

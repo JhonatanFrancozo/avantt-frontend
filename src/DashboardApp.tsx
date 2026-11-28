@@ -275,35 +275,17 @@ export default function DashboardApp({
   }
 
   async function saveMember(submission: MemberSubmission) {
-    if (submission.mode === 'create') {
-      await api.usuarios.convidarUsuario(submission.member)
-      const [refreshedMembers, refreshedProjects] = await Promise.all([
-        api.usuarios.listarUsuarios(),
-        api.projetos.listarProjetos(),
-      ])
+    await api.usuarios.convidarUsuario(submission.member)
+    const [refreshedMembers, refreshedProjects] = await Promise.all([
+      api.usuarios.listarUsuarios(),
+      api.projetos.listarProjetos(),
+    ])
 
-      setData((current) => ({
-        ...current,
-        members: refreshedMembers,
-        projects: refreshedProjects,
-      }))
-    } else {
-      await api.usuarios.vincularUsuarioPorEmail(
-        submission.email,
-        submission.projectIds
-      )
-
-      const [refreshedMembers, refreshedProjects] = await Promise.all([
-        api.usuarios.listarUsuarios(),
-        api.projetos.listarProjetos(),
-      ])
-
-      setData((current) => ({
-        ...current,
-        members: refreshedMembers,
-        projects: refreshedProjects,
-      }))
-    }
+    setData((current) => ({
+      ...current,
+      members: refreshedMembers,
+      projects: refreshedProjects,
+    }))
 
     closeModal()
   }

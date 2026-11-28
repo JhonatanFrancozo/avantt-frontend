@@ -18,6 +18,11 @@ export function fmtDate(d: string) {
   })
 }
 
+export function getLocalDateInputValue(date = new Date()) {
+  const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60_000)
+  return localDate.toISOString().slice(0, 10)
+}
+
 export const TODAY_STR = new Date().toLocaleDateString('pt-BR', {
   weekday: 'long', day: '2-digit', month: 'long', year: 'numeric',
 })

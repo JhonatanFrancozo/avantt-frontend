@@ -128,6 +128,7 @@ export interface Task {
   tags: string[]
   taskType?: TaskType
   hoursSpent?: number
+  startDate?: string
   progress?: number
   description?: string
 }
@@ -170,6 +171,13 @@ export interface Member {
   cpf?: string
   isActive?: boolean
   inviteStatus?: 'pending' | 'accepted'
+}
+
+export interface MemberSubmission {
+  mode: 'create'
+  member: Omit<Member, 'id'> & {
+    appRole: AppRole
+  }
 }
 
 export interface CreateUserRequest {

@@ -236,10 +236,21 @@ export default function App() {
       return
     }
 
-    const nextSession = await api.auth.signup(payload as SignupPayload)
+    const signupPayload = payload as SignupPayload
+    const result = await api.auth.signup(signupPayload)
 
-    api.auth.saveSession(nextSession, true)
-    setSession(nextSession)
+    if (result.requiresFirstAccessValidation) {
+      setPendingFirstAccess({
+        email: result.email,
+        password: signupPayload.password,
+        remember: false,
+      })
+      setView('invitation')
+      return
+    }
+
+    api.auth.saveSession(result.session, true)
+    setSession(result.session)
     setPendingFirstAccess(null)
     setView('dashboard')
   }

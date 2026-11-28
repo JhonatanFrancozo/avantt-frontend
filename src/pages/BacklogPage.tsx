@@ -355,7 +355,9 @@ export default function BacklogPage({
     const tarefaSalva = await atualizarStatusTarefa(
       String(updated.id),
       statusId,
-      updated.blockedBy ?? undefined
+      updated.blockedBy ?? undefined,
+      updated.startDate,
+      updated.hoursSpent
     )
 
     setTasks((currentTasks) =>

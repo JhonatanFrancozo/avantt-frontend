@@ -100,21 +100,11 @@ export async function atualizarProjeto(
 ): Promise<Project> {
   if (shouldUseMock()) return mock.atualizarProjeto(id, body)
 
-  const statuses = await listarStatus()
-
-  const statusId = body.status
-    ? statuses.find(
-        (item) =>
-          item.nome.toLocaleLowerCase('pt-BR') ===
-          body.status?.toLocaleLowerCase('pt-BR')
-      )?.id
-    : undefined
-
   const { data } = await api.put<Project>(`/projetos/${id}`, {
     name: body.name,
     description: body.description,
     color: body.color,
-    statusId,
+    status: body.status,
     startDate: body.startDate,
     endDate: body.endDate,
     clienteId: body.clientId,
