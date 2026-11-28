@@ -6,11 +6,14 @@ import MemberPickerRow from '../components/MemberPickerRow'
 import { PROJ_PALETTE } from '../constants'
 import type { Project, Member, Client } from '../types'
 import * as api from '../api'
+import { getApiErrorDetails, getApiErrorMessage } from '../api'
+import { c } from '../theme'
+import { fmtDate, getLocalDateInputValue } from '../utils'
 
 interface Props {
   members: Member[]
   onClose: () => void
-  onSave: (p: Omit<Project, 'id'>) => void
+  onSave: (p: Omit<Project, 'id'>) => Promise<void>
   initial?: Project
 }
 
@@ -32,6 +35,7 @@ export default function CreateProjectModal({
   const [team, setTeam] = useState<string[]>(initial?.team ?? [])
 
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [serverError, setServerError] = useState('')
 
   useEffect(() => {
     api.clientes.listarClientes()
@@ -48,6 +52,8 @@ export default function CreateProjectModal({
 
     if (!startDate) {
       e.startDate = 'Data de início obrigatória'
+    } else if (startDate < getLocalDateInputValue()) {
+      e.startDate = 'Data de início deve ser hoje ou uma data futura'
     }
 
     if (!endDate) {
@@ -72,43 +78,61 @@ export default function CreateProjectModal({
     return Object.keys(e).length === 0
   }
 
-  function submit() {
+  async function submit() {
+    setServerError('')
     if (!validate()) return
 
     const client = clients.find(
       (item) => String(item.id) === clientId
     )
 
-    onSave({
-      name: name.trim(),
-      description: description.trim(),
-      clientId: client?.id ?? null,
-      clientName: client?.name,
-      color,
-      status: initial?.status ?? 'Em andamento',
-      startDate,
-      endDate,
-      progress: 0,
-      sprints: {
-        total: 0,
-        done: 0,
-        active: 0,
-        delayed: 0
-      },
-      tasks: {
-        total: 0,
-        done: 0,
-        delayed: 0,
-        blocked: 0,
-        cancelled: 0
-      },
-      team,
-      teamIds: members
-        .filter((member) => team.includes(member.name))
-        .map((member) => Number(member.id.replace(/\D/g, ''))),
-      risks: initial?.risks ?? [],
-      milestones: initial?.milestones ?? []
-    })
+    try {
+      await onSave({
+        name: name.trim(),
+        description: description.trim(),
+        clientId: client?.id ?? null,
+        clientName: client?.name,
+        color,
+        status: initial?.status ?? 'Em andamento',
+        startDate,
+        endDate,
+        progress: 0,
+        sprints: {
+          total: 0,
+          done: 0,
+          active: 0,
+          delayed: 0
+        },
+        tasks: {
+          total: 0,
+          done: 0,
+          delayed: 0,
+          blocked: 0,
+          cancelled: 0
+        },
+        team,
+        teamIds: members
+          .filter((member) => team.includes(member.name))
+          .map((member) => Number(member.id.replace(/\D/g, ''))),
+        risks: initial?.risks ?? [],
+        milestones: initial?.milestones ?? []
+      })
+    } catch (error) {
+      const details = getApiErrorDetails(error)
+      const fieldNames = new Set(['name', 'startDate', 'endDate'])
+      const fieldErrors: Record<string, string> = {}
+
+      for (const detail of details) {
+        if (detail.field && fieldNames.has(detail.field)) {
+          fieldErrors[detail.field] = detail.message
+        }
+      }
+
+      setErrors(fieldErrors)
+      if (details.length === 0 || details.some((detail) => !detail.field || !fieldNames.has(detail.field))) {
+        setServerError(getApiErrorMessage(error))
+      }
+    }
   }
 
   function toggleMember(memberName: string) {
@@ -127,6 +151,11 @@ export default function CreateProjectModal({
       submitLabel={initial ? 'Salvar alterações' : 'Criar Projeto'}
       wide
     >
+      {serverError && (
+        <div role="alert" style={{ marginBottom: 12, padding: '10px 12px', backgroundColor: c.redLight, color: c.red, borderRadius: 8, fontSize: 13 }}>
+          {serverError}
+        </div>
+      )}
       <div
         style={{
           display: 'grid',
@@ -189,6 +218,11 @@ export default function CreateProjectModal({
                 value={startDate}
                 onChange={setStartDate}
               />
+              {startDate && (
+                <span style={{ fontSize: 11, color: c.textMuted }}>
+                  Selecionada: {fmtDate(startDate)}
+                </span>
+              )}
             </Field>
 
             <Field label="Entrega" required error={errors.endDate}>

@@ -380,7 +380,13 @@ interface Props {
   tasks: Task[]
   projects: Project[]
   onUpdateTask: (task: Task) => Promise<void>
-  onUpdateStatus: (taskId: string, statusId: number) => Promise<void>
+  onUpdateStatus: (
+    taskId: string,
+    statusId: number,
+    blockedBy?: string,
+    startDate?: string,
+    hoursSpent?: number
+  ) => Promise<void>
 }
 
 export default function MyTasksPage({
@@ -405,7 +411,13 @@ export default function MyTasksPage({
   async function updateTaskStatusFromModal(updatedTask: Task) {
     const statusId = STATUS_IDS[updatedTask.status]
 
-    await onUpdateStatus(updatedTask.id, statusId)
+    await onUpdateStatus(
+      updatedTask.id,
+      statusId,
+      updatedTask.blockedBy ?? undefined,
+      updatedTask.startDate,
+      updatedTask.hoursSpent
+    )
 
     setDetailTask(null)
   }

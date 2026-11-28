@@ -128,6 +128,7 @@ export interface Task {
   tags: string[]
   taskType?: TaskType
   hoursSpent?: number
+  startDate?: string
   progress?: number
   description?: string
 }
