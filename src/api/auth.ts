@@ -137,13 +137,16 @@ export async function acceptInvitation(payload: {
 
 export async function signup(
   payload: SignupPayload
-): Promise<AuthSession> {
+): Promise<LoginResult> {
   if (IS_MOCK) {
-    return mockSession({
-      ...payload,
-      role: payload.accountType === 'organization' ? 'manager' : 'developer',
-      linked: payload.accountType === 'organization',
-    })
+    return {
+      requiresFirstAccessValidation: false,
+      session: mockSession({
+        ...payload,
+        role: payload.accountType === 'organization' ? 'manager' : 'developer',
+        linked: payload.accountType === 'organization',
+      }),
+    }
   }
 
   const endpoint =
@@ -169,7 +172,17 @@ export async function signup(
 
   const { data } = await api.post<AuthSession>(endpoint, request)
 
-  return normalizeSession(data)
+  if (payload.accountType === 'developer') {
+    return {
+      requiresFirstAccessValidation: true,
+      email: payload.email,
+    }
+  }
+
+  return {
+    requiresFirstAccessValidation: false,
+    session: normalizeSession(data),
+  }
 }
 
 export async function linkOrganization(

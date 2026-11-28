@@ -172,6 +172,13 @@ export interface Member {
   inviteStatus?: 'pending' | 'accepted'
 }
 
+export interface MemberSubmission {
+  mode: 'create'
+  member: Omit<Member, 'id'> & {
+    appRole: AppRole
+  }
+}
+
 export interface CreateUserRequest {
   nome: string
   email: string
